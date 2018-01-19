@@ -1,12 +1,12 @@
-# SRGAN
-A PyTorch implementation of SRGAN based on the paper 
-[Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network](https://arxiv.org/pdf/1609.04802.pdf)
+# DSRGACN(still on progress)
+A PyTorch implementation of Delayed Super-Resolution Generative Adversarial Capsule Network based on the paper 
+[xxx](xxx)
 
 ## Requirements
 - [Anaconda](https://www.anaconda.com/download/)
 - PyTorch
 ```
-conda install pytorch torchvision -c pytorch
+conda install pytorch torchvision cuda90 -c pytorch
 ```
 - tqdm
 ```
