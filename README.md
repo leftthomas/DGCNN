@@ -16,6 +16,10 @@ pip install tqdm
 ```
 pip install git+https://github.com/Po-Hsun-Su/pytorch-ssim.git@master
 ```
+- CapsuleLayer
+```
+pip install git+https://github.com/leftthomas/CapsuleLayer.git@master
+```
 - opencv
 ```
 conda install opencv
