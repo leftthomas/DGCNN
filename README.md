@@ -10,7 +10,7 @@ conda install pytorch torchvision cuda90 -c pytorch
 ```
 - tqdm
 ```
-pip install tqdm
+conda install tqdm
 ```
 - pytorch-ssim
 ```
