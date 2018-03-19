@@ -6,7 +6,7 @@ A PyTorch implementation of Delayed Super-Resolution Generative Adversarial Caps
 - [Anaconda](https://www.anaconda.com/download/)
 - PyTorch
 ```
-conda install pytorch torchvision cuda90 -c pytorch
+conda install pytorch torchvision -c pytorch
 ```
 - tqdm
 ```
