@@ -6,7 +6,7 @@ from PIL import Image
 from torch.autograd import Variable
 from torchvision.transforms import ToTensor, ToPILImage
 
-from model import Generator
+from model import Model
 
 parser = argparse.ArgumentParser(description='Test Single Image')
 parser.add_argument('--upscale_factor', default=4, type=int, help='super resolution upscale factor')
@@ -20,7 +20,7 @@ TEST_MODE = True if opt.test_mode == 'GPU' else False
 IMAGE_NAME = opt.image_name
 MODEL_NAME = opt.model_name
 
-model = Generator(UPSCALE_FACTOR).eval()
+model = Model(UPSCALE_FACTOR).eval()
 if TEST_MODE:
     model.cuda()
     model.load_state_dict(torch.load('epochs/' + MODEL_NAME))

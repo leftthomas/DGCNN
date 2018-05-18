@@ -41,9 +41,6 @@ The test image dataset are sampled from
 | **Urban 100** | [Huang et al. CVPR 2015](https://sites.google.com/site/jbhuang0604/publications/struct_sr).
 Download the image dataset from [here](https://pan.baidu.com/s/1nuGyn8l), and then extract it into `data` directory.
 
-### Test Video Dataset
-The test video dataset are three trailers. Download the video dataset from 
-[here](https://pan.baidu.com/s/1dEHwNnj).
 
 ## Usage
 
@@ -54,8 +51,6 @@ python train.py
 optional arguments:
 --crop_size                   training images crop size [default value is 88]
 --upscale_factor              super resolution upscale factor [default value is 4](choices:[2, 4, 8])
---g_trigger_threshold         generator update trigger threshold [default value is 0.2](choices:[0.1, 0.2, 0.3, 0.4, 0.5])
---g_update_number             generator update number [default value is 2](choices:[1, 2, 3, 4, 5])
 --num_epochs                  train epoch number [default value is 100]
 ```
 The output val super resolution images are on `training_results` directory.
@@ -76,29 +71,15 @@ python test_image.py
 
 optional arguments:
 --upscale_factor              super resolution upscale factor [default value is 4]
---test_mode                   using GPU or CPU [default value is 'GPU'](choices:['GPU', 'CPU'])
 --image_name                  test low resolution image name
 --model_name                  generator model epoch name [default value is netG_epoch_4_100.pth]
 ```
 The output super resolution image are on the same directory.
 
-### Test Single Video
-```
-python test_video.py
-
-optional arguments:
---upscale_factor              super resolution upscale factor [default value is 4]
---video_name                  test low resolution video name
---model_name                  generator model epoch name [default value is netG_epoch_4_100.pth]
-```
-The output super resolution video and compared video are on the same directory.
-
 ## Benchmarks
 **Upscale Factor = 2**
 
 Epochs with batch size of 64 takes ~2 minute 30 seconds on a NVIDIA GTX 1080Ti GPU. 
-
-> Image Results
 
 The left is bicubic interpolation image, the middle is high resolution image, and 
 the right is super resolution image(output of the SRGAN).
@@ -119,17 +100,9 @@ the right is super resolution image(output of the SRGAN).
 
 ![Urban100_098](images/4.png)
 
-> Video Results
-
-The left is bicubic interpolation video, the right is super resolution video(output of the SRGAN).
-
-[![Watch the video](images/video_SRF_2.png)](https://youtu.be/05vx-vOJOZs)
-
 **Upscale Factor = 4**
 
 Epochs with batch size of 64 takes ~4 minute 30 seconds on a NVIDIA GTX 1080Ti GPU. 
-
-> Image Results
 
 The left is bicubic interpolation image, the middle is high resolution image, and 
 the right is super resolution image(output of the SRGAN).
@@ -150,17 +123,9 @@ the right is super resolution image(output of the SRGAN).
 
 ![Urban100_060](images/8.png)
 
-> Video Results
-
-The left is bicubic interpolation video, the right is super resolution video(output of the SRGAN).
-
-[![Watch the video](images/video_SRF_4.png)](https://youtu.be/tNR2eiMeoQs)
-
 **Upscale Factor = 8**
 
 Epochs with batch size of 64 takes ~3 minute 30 seconds on a NVIDIA GTX 1080Ti GPU. 
-
-> Image Results
 
 The left is bicubic interpolation image, the middle is high resolution image, and 
 the right is super resolution image(output of the SRGAN).
@@ -180,12 +145,6 @@ the right is super resolution image(output of the SRGAN).
 - SunHays80_078(PSNR:31.9351; SSIM:0.8381)
 
 ![SunHays80_078](images/12.png)
-
-> Video Results
-
-The left is bicubic interpolation video, the right is super resolution video(output of the SRGAN).
-
-[![Watch the video](images/video_SRF_8.png)](https://youtu.be/EuvXTKCRr8I)
 
 The complete test results could be downloaded from [here](https://pan.baidu.com/s/1qXTRC8c).
 

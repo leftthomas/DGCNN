@@ -3,6 +3,7 @@ import os
 from math import log10
 
 import pandas as pd
+import pytorch_ssim
 import torch.optim as optim
 import torch.utils.data
 import torchvision.utils as utils
@@ -10,19 +11,14 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-import pytorch_ssim
 from data_utils import TrainDatasetFromFolder, ValDatasetFromFolder, display_transform
 from loss import GeneratorLoss
-from model import Generator, Discriminator
+from model import Model
 
 parser = argparse.ArgumentParser(description='Train Super Resolution Models')
 parser.add_argument('--crop_size', default=88, type=int, help='training images crop size')
 parser.add_argument('--upscale_factor', default=4, type=int, choices=[2, 4, 8],
                     help='super resolution upscale factor')
-parser.add_argument('--g_trigger_threshold', default=0.2, type=float, choices=[0.1, 0.2, 0.3, 0.4, 0.5],
-                    help='generator update trigger threshold')
-parser.add_argument('--g_update_number', default=2, type=int, choices=[1, 2, 3, 4, 5],
-                    help='generator update number')
 parser.add_argument('--num_epochs', default=100, type=int, help='train epoch number')
 
 opt = parser.parse_args()
@@ -30,28 +26,22 @@ opt = parser.parse_args()
 CROP_SIZE = opt.crop_size
 UPSCALE_FACTOR = opt.upscale_factor
 NUM_EPOCHS = opt.num_epochs
-G_TRIGGER_THRESHOLD = opt.g_trigger_threshold
-G_UPDATE_NUMBER = opt.g_update_number
 
 train_set = TrainDatasetFromFolder('data/VOC2012/train', crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
 val_set = ValDatasetFromFolder('data/VOC2012/val', upscale_factor=UPSCALE_FACTOR)
 train_loader = DataLoader(dataset=train_set, num_workers=4, batch_size=64, shuffle=True)
 val_loader = DataLoader(dataset=val_set, num_workers=4, batch_size=1, shuffle=False)
 
-netG = Generator(UPSCALE_FACTOR)
+netG = Model(UPSCALE_FACTOR)
 print('# generator parameters:', sum(param.numel() for param in netG.parameters()))
-netD = Discriminator()
-print('# discriminator parameters:', sum(param.numel() for param in netD.parameters()))
 
 generator_criterion = GeneratorLoss()
 
 if torch.cuda.is_available():
     netG.cuda()
-    netD.cuda()
     generator_criterion.cuda()
 
 optimizerG = optim.Adam(netG.parameters())
-optimizerD = optim.Adam(netD.parameters())
 
 results = {'d_loss': [], 'g_loss': [], 'd_score': [], 'g_score': [], 'psnr': [], 'ssim': []}
 
@@ -60,44 +50,16 @@ for epoch in range(1, NUM_EPOCHS + 1):
     running_results = {'batch_sizes': 0, 'd_loss': 0, 'g_loss': 0, 'd_score': 0, 'g_score': 0}
 
     netG.train()
-    netD.train()
     for data, target in train_bar:
-        g_update_first = True
         batch_size = data.size(0)
         running_results['batch_sizes'] += batch_size
 
-        ############################
-        # (1) Update D network: maximize D(x)-1-D(G(z))
-        ###########################
-        real_img = Variable(target)
-        if torch.cuda.is_available():
-            real_img = real_img.cuda()
-        z = Variable(data)
-        if torch.cuda.is_available():
-            z = z.cuda()
+        netG.zero_grad()
+        g_loss = generator_criterion(fake_out, fake_img, real_img)
+        g_loss.backward()
+        optimizerG.step()
         fake_img = netG(z)
-
-        netD.zero_grad()
-        real_out = netD(real_img).mean()
         fake_out = netD(fake_img).mean()
-        d_loss = 1 - real_out + fake_out
-        d_loss.backward(retain_graph=True)
-        optimizerD.step()
-
-        ############################
-        # (2) Update G network: minimize 1-D(G(z)) + Perception Loss + Image Loss
-        ###########################
-        index = 1
-        while ((real_out.data[0] - fake_out.data[0] > G_TRIGGER_THRESHOLD) or g_update_first) and (
-                index <= G_UPDATE_NUMBER):
-            netG.zero_grad()
-            g_loss = generator_criterion(fake_out, fake_img, real_img)
-            g_loss.backward()
-            optimizerG.step()
-            fake_img = netG(z)
-            fake_out = netD(fake_img).mean()
-            g_update_first = False
-            index += 1
 
         g_loss = generator_criterion(fake_out, fake_img, real_img)
         running_results['g_loss'] += g_loss.data[0] * batch_size

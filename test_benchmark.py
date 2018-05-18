@@ -4,15 +4,15 @@ from math import log10
 
 import numpy as np
 import pandas as pd
+import pytorch_ssim
 import torch
 import torchvision.utils as utils
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-import pytorch_ssim
 from data_utils import TestDatasetFromFolder, display_transform
-from model import Generator
+from model import Model
 
 parser = argparse.ArgumentParser(description='Test Benchmark Datasets')
 parser.add_argument('--upscale_factor', default=4, type=int, help='super resolution upscale factor')
@@ -25,7 +25,7 @@ MODEL_NAME = opt.model_name
 results = {'Set5': {'psnr': [], 'ssim': []}, 'Set14': {'psnr': [], 'ssim': []}, 'BSD100': {'psnr': [], 'ssim': []},
            'Urban100': {'psnr': [], 'ssim': []}, 'SunHays80': {'psnr': [], 'ssim': []}}
 
-model = Generator(UPSCALE_FACTOR).eval()
+model = Model(UPSCALE_FACTOR).eval()
 if torch.cuda.is_available():
     model = model.cuda()
 model.load_state_dict(torch.load('epochs/' + MODEL_NAME))
