@@ -10,7 +10,7 @@ class PSNRValueMeter(meter.Meter):
         self.reset()
         self.val = 0
 
-    def add(self, value, n=1):
+    def add(self, sr, hr):
         self.val = value
         self.sum += value
         self.var += value * value

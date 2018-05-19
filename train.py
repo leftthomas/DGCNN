@@ -55,28 +55,28 @@ def on_start_epoch(state):
 
 def on_end_epoch(state):
     print('[Epoch %d] Training Loss: %.4f Training PSNR: %.4f dB Training SSIM: %.4f' % (
-        state['epoch'], meter_loss.value()[0], meter_psnr.value()[0], meter_ssim.value()[0]))
+        state['epoch'], meter_loss.value()[0], meter_psnr.value(), meter_ssim.value()))
 
     train_loss_logger.log(state['epoch'], meter_loss.value()[0])
-    train_psnr_logger.log(state['epoch'], meter_psnr.value()[0])
-    train_ssim_logger.log(state['epoch'], meter_ssim.value()[0])
+    train_psnr_logger.log(state['epoch'], meter_psnr.value())
+    train_ssim_logger.log(state['epoch'], meter_ssim.value())
     results['train_loss'].append(meter_loss.value()[0])
-    results['train_psnr'].append(meter_psnr.value()[0])
-    results['train_ssim'].append(meter_ssim.value()[0])
+    results['train_psnr'].append(meter_psnr.value())
+    results['train_ssim'].append(meter_ssim.value())
 
     reset_meters()
 
     engine.test(processor, val_loader)
 
     val_loss_logger.log(state['epoch'], meter_loss.value()[0])
-    val_psnr_logger.log(state['epoch'], meter_psnr.value()[0])
-    val_ssim_logger.log(state['epoch'], meter_ssim.value()[0])
+    val_psnr_logger.log(state['epoch'], meter_psnr.value())
+    val_ssim_logger.log(state['epoch'], meter_ssim.value())
     results['val_loss'].append(meter_loss.value()[0])
-    results['val_psnr'].append(meter_psnr.value()[0])
-    results['val_ssim'].append(meter_ssim.value()[0])
+    results['val_psnr'].append(meter_psnr.value())
+    results['val_ssim'].append(meter_ssim.value())
 
     print('[Epoch %d] Valing Loss: %.4f Valing PSNR: %.4f dB Valing SSIM: %.4f' % (
-        state['epoch'], meter_loss.value()[0], meter_psnr.value()[0], meter_ssim.value()[0]))
+        state['epoch'], meter_loss.value()[0], meter_psnr.value(), meter_ssim.value()))
 
     # save model
     torch.save(model.state_dict(), 'epochs/upscale_%d_epoch_%d.pth' % (UPSCALE_FACTOR, state['epoch']))
