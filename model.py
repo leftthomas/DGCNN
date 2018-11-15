@@ -4,7 +4,7 @@ from torch import nn
 
 
 class Model(nn.Module):
-    def __init__(self, upscale_factor, num_iterations=3, **kwargs):
+    def __init__(self, upscale_factor=2, num_iterations=3, **kwargs):
         super(Model, self).__init__()
 
         self.enc1 = nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, stride=2, padding=1)

@@ -20,7 +20,7 @@ pip install git+https://github.com/leftthomas/CapsuleLayer.git@master
 
 ### Train、Val Datasets
 The train and val datasets are sampled from [ILSVRC2012](http://www.image-net.org/challenges/LSVRC/2012/).
-Train dataset has 16700 images and Val dataset has 50,000 images.
+Train dataset has 1,282,167 images and Val dataset has 50,000 images.
 Download the train dataset from [here](http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_train.tar) 
 and val dataset from [here](http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_val.tar), 
 then extract them into `data` directory.
