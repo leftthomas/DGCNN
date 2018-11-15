@@ -1,5 +1,5 @@
 # SRCapsNet
-A PyTorch implementation of Super-Resolution Capsule Network based on paper [xxx](xxx).
+A PyTorch implementation of Super-Resolution Capsule Network based on the paper [xxx](xxx).
 
 ## Requirements
 - [Anaconda](https://www.anaconda.com/download/)
@@ -7,7 +7,7 @@ A PyTorch implementation of Super-Resolution Capsule Network based on paper [xxx
 ```
 conda install pytorch torchvision -c pytorch
 ```
-* PyTorchNet
+- PyTorchNet
 ```
 pip install git+https://github.com/pytorch/tnt.git@master
 ```
@@ -15,25 +15,15 @@ pip install git+https://github.com/pytorch/tnt.git@master
 ```
 pip install git+https://github.com/leftthomas/CapsuleLayer.git@master
 ```
-- tqdm
-```
-conda install tqdm
-```
-- pytorch-ssim
-```
-pip install git+https://github.com/Po-Hsun-Su/pytorch-ssim.git@master
-```
-- opencv
-```
-conda install opencv
-```
 
 ## Datasets
 
 ### Train、Val Datasets
-The train and val datasets are sampled from [VOC2012](http://cvlab.postech.ac.kr/~mooyeol/pascal_voc_2012/).
-Train dataset has 16700 images and Val dataset has 425 images.
-Download the datasets from [here](https://pan.baidu.com/s/1c17nfeo), and then extract them into `data` directory.
+The train and val datasets are sampled from [ILSVRC2012](http://www.image-net.org/challenges/LSVRC/2012/).
+Train dataset has 16700 images and Val dataset has 50,000 images.
+Download the train dataset from [here](http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_train.tar) 
+and val dataset from [here](http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_val.tar), 
+then extract them into `data` directory.
 
 ### Test Image Dataset
 The test image dataset are sampled from 
@@ -42,7 +32,7 @@ The test image dataset are sampled from
 | **BSD 100** | [Martin et al. ICCV 2001](https://www.eecs.berkeley.edu/Research/Projects/CS/vision/bsds/)
 | **Sun-Hays 80** | [Sun and Hays ICCP 2012](http://cs.brown.edu/~lbsun/SRproj2012/SR_iccp2012.html)
 | **Urban 100** | [Huang et al. CVPR 2015](https://sites.google.com/site/jbhuang0604/publications/struct_sr).
-Download the image dataset from [here](https://pan.baidu.com/s/1nuGyn8l), and then extract it into `data` directory.
+Download the image dataset from [BaiduYun](https://pan.baidu.com/s/1nuGyn8l), and then extract it into `data` directory.
 
 ## Usage
 
@@ -65,7 +55,7 @@ optional arguments:
 --upscale_factor              super resolution upscale factor [default value is 4]
 --model_name                  generator model epoch name [default value is netG_epoch_4_100.pth]
 ```
-The output super resolution images are on `benchmark_results` directory.
+The output super resolution images are on `results` directory.
 
 ### Test Single Image
 ```
