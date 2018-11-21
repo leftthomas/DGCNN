@@ -126,12 +126,12 @@ if __name__ == '__main__':
 
     engine = Engine()
     meter_loss, meter_psnr, meter_ssim = tnt.meter.AverageValueMeter(), PSNRValueMeter(), SSIMValueMeter()
-    train_loss_logger = VisdomPlotLogger('line', opts={'title': 'Train Loss'})
-    val_loss_logger = VisdomPlotLogger('line', opts={'title': 'Val Loss'})
-    train_psnr_logger = VisdomPlotLogger('line', opts={'title': 'Train PSNR'})
-    val_psnr_logger = VisdomPlotLogger('line', opts={'title': 'Val PSNR'})
-    train_ssim_logger = VisdomPlotLogger('line', opts={'title': 'Train SSIM'})
-    val_ssim_logger = VisdomPlotLogger('line', opts={'title': 'Val SSIM'})
+    train_loss_logger = VisdomPlotLogger('line', env=UPSCALE_FACTOR, opts={'title': 'Train Loss'})
+    val_loss_logger = VisdomPlotLogger('line', env=UPSCALE_FACTOR, opts={'title': 'Val Loss'})
+    train_psnr_logger = VisdomPlotLogger('line', env=UPSCALE_FACTOR, opts={'title': 'Train PSNR'})
+    val_psnr_logger = VisdomPlotLogger('line', env=UPSCALE_FACTOR, opts={'title': 'Val PSNR'})
+    train_ssim_logger = VisdomPlotLogger('line', env=UPSCALE_FACTOR, opts={'title': 'Train SSIM'})
+    val_ssim_logger = VisdomPlotLogger('line', env=UPSCALE_FACTOR, opts={'title': 'Val SSIM'})
 
     engine.hooks['on_sample'] = on_sample
     engine.hooks['on_forward'] = on_forward

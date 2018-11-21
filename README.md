@@ -39,7 +39,7 @@ Download the test dataset from [BaiduYun](https://pan.baidu.com/s/1S9w3FAbncE-OT
 
 ### Train Model
 ```
-python train.py
+python -m visdom.server -logging_level WARNING & python train.py
 
 optional arguments:
 --crop_size                   training images crop size [default value is 240]
@@ -49,6 +49,9 @@ optional arguments:
 --train_path                  train image data path [default value is data/ILSVRC2012_img_train]
 --val_path                    val image data path [default value is data/ILSVRC2012_img_val]
 ```
+Visdom now can be accessed by going to `127.0.0.1:8097/env/$upscale_factor` in your browser, 
+`$upscale_factor` means the upscale factor which you are training. If you want to interrupt 
+this process, just type `ps aux | grep visdom` to find the `PID`, then `kill PID`.
 
 ### Test Benchmark Datasets
 ```
