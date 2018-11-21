@@ -10,9 +10,8 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from data_utils import TestDatasetFromFolder, display_transform
 from model import Model
-from utils import ssim
+from utils import ssim, TestDatasetFromFolder, display_transform
 
 parser = argparse.ArgumentParser(description='Test Benchmark Datasets')
 parser.add_argument('--upscale_factor', default=4, type=int, help='super resolution upscale factor')

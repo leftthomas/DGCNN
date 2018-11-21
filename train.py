@@ -11,9 +11,8 @@ from torchnet.engine import Engine
 from torchnet.logger import VisdomPlotLogger
 from tqdm import tqdm
 
-from data_utils import TrainDatasetFromFolder, ValDatasetFromFolder
 from model import Model
-from utils import PSNRValueMeter, SSIMValueMeter
+from utils import PSNRValueMeter, SSIMValueMeter, TrainDatasetFromFolder, ValDatasetFromFolder
 
 
 def processor(sample):
