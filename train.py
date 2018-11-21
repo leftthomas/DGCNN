@@ -4,7 +4,6 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import torchnet as tnt
-from torch.autograd import Variable
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torchnet.engine import Engine
@@ -19,10 +18,7 @@ def processor(sample):
     data, labels, training = sample
 
     if torch.cuda.is_available():
-        data = data.cuda()
-        labels = labels.cuda()
-    data = Variable(data)
-    labels = Variable(labels)
+        data, labels = data.to('cuda'), labels.to('cuda')
 
     model.train(training)
 
@@ -42,9 +38,9 @@ def reset_meters():
 
 
 def on_forward(state):
-    meter_loss.add(state['loss'].data[0])
-    meter_psnr.add(state['output'].data, state['sample'][1])
-    meter_ssim.add(state['output'].data[0], state['sample'][1])
+    meter_loss.add(state['loss'].detach().item())
+    meter_psnr.add(state['output'].detach(), state['sample'][1])
+    meter_ssim.add(state['output'].detach(), state['sample'][1])
 
 
 def on_start_epoch(state):
@@ -77,8 +73,11 @@ def on_end_epoch(state):
     print('[Epoch %d] Valing Loss: %.4f Valing PSNR: %.4f dB Valing SSIM: %.4f' % (
         state['epoch'], meter_loss.value()[0], meter_psnr.value(), meter_ssim.value()))
 
-    # save model
-    torch.save(model.state_dict(), 'epochs/upscale_%d_epoch_%d.pth' % (UPSCALE_FACTOR, state['epoch']))
+    # save best model
+    global best_psnr, best_ssim
+    if meter_psnr.value() > best_psnr and meter_ssim.value() > best_ssim:
+        torch.save(model.state_dict(), 'epochs/upscale_%d.pth' % UPSCALE_FACTOR)
+        best_psnr, best_ssim = meter_psnr.value(), meter_ssim.value()
     # save statistics at every 10 epochs
     if state['epoch'] % 10 == 0:
         data_frame = pd.DataFrame(data={'train_loss': results['train_loss'], 'train_psnr': results['train_psnr'],
@@ -91,11 +90,13 @@ def on_end_epoch(state):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Train Super Resolution Models')
-    parser.add_argument('--crop_size', default=96, type=int, help='training images crop size')
+    parser.add_argument('--crop_size', default=256, type=int, help='training images crop size')
     parser.add_argument('--upscale_factor', default=4, type=int, choices=[2, 4, 8],
                         help='super resolution upscale factor')
-    parser.add_argument('--batch_size', default=50, type=int, help='train batch size')
+    parser.add_argument('--batch_size', default=32, type=int, help='train batch size')
     parser.add_argument('--num_epochs', default=100, type=int, help='train epoch number')
+    parser.add_argument('--train_path', default='data/train', type=str, help='train image data path')
+    parser.add_argument('--val_path', default='data/val', type=str, help='val image data path')
 
     opt = parser.parse_args()
 
@@ -103,25 +104,28 @@ if __name__ == '__main__':
     UPSCALE_FACTOR = opt.upscale_factor
     BATCH_SIZE = opt.batch_size
     NUM_EPOCHS = opt.num_epochs
+    TRAIN_PATH = opt.train_path
+    VAL_PATH = opt.val_path
 
-    train_set = TrainDatasetFromFolder('data/VOC2012/train', crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
-    val_set = ValDatasetFromFolder('data/VOC2012/val', upscale_factor=UPSCALE_FACTOR)
+    results = {'train_loss': [], 'train_psnr': [], 'train_ssim': [], 'val_loss': [], 'val_psnr': [], 'val_ssim': []}
+    # record current best val measures
+    best_psnr, best_ssim = 0, 0
+
+    train_set = TrainDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
+    val_set = ValDatasetFromFolder(VAL_PATH, upscale_factor=UPSCALE_FACTOR)
     train_loader = DataLoader(dataset=train_set, num_workers=4, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(dataset=val_set, num_workers=4, batch_size=BATCH_SIZE, shuffle=False)
 
     model = Model(UPSCALE_FACTOR)
     loss_criterion = nn.MSELoss()
     if torch.cuda.is_available():
-        model.cuda()
-        loss_criterion.cuda()
+        model = model.to('cuda')
     print("# parameters:", sum(param.numel() for param in model.parameters()))
 
     optimizer = Adam(model.parameters())
 
     engine = Engine()
-    meter_loss = tnt.meter.AverageValueMeter()
-    meter_psnr = PSNRValueMeter()
-    meter_ssim = SSIMValueMeter()
+    meter_loss, meter_psnr, meter_ssim = tnt.meter.AverageValueMeter(), PSNRValueMeter(), SSIMValueMeter()
     train_loss_logger = VisdomPlotLogger('line', opts={'title': 'Train Loss'})
     val_loss_logger = VisdomPlotLogger('line', opts={'title': 'Val Loss'})
     train_psnr_logger = VisdomPlotLogger('line', opts={'title': 'Train PSNR'})
@@ -133,8 +137,6 @@ if __name__ == '__main__':
     engine.hooks['on_forward'] = on_forward
     engine.hooks['on_start_epoch'] = on_start_epoch
     engine.hooks['on_end_epoch'] = on_end_epoch
-
-    results = {'train_loss': [], 'train_psnr': [], 'train_ssim': [], 'val_loss': [], 'val_psnr': [], 'val_ssim': []}
 
     engine.train(processor, train_loader, maxepoch=NUM_EPOCHS, optimizer=optimizer)
 

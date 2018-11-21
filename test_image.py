@@ -3,7 +3,6 @@ import time
 
 import torch
 from PIL import Image
-from torch.autograd import Variable
 from torchvision.transforms import ToTensor, ToPILImage
 
 from model import Model
