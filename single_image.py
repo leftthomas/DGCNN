@@ -20,6 +20,9 @@ MODEL_NAME = opt.model_name
 
 image = Image.open(IMAGE_NAME)
 image = ToTensor()(image).unsqueeze(0)
+# make sure the gray image to be 3 channel
+if image.size(1) == 1:
+    image = torch.cat((image, image, image), dim=1)
 
 model = Model(UPSCALE_FACTOR).eval()
 if torch.cuda.is_available():

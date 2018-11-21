@@ -40,6 +40,11 @@ class TrainValDatasetFromFolder(Dataset):
     def __getitem__(self, index):
         hr_image = self.hr_transform(Image.open(self.image_filenames[index]))
         lr_image = self.lr_transform(hr_image)
+        # make sure the gray image to be 3 channel
+        if hr_image.size(0) == 1:
+            hr_image = torch.cat((hr_image, hr_image, hr_image), dim=0)
+        if lr_image.size(0) == 1:
+            lr_image = torch.cat((lr_image, lr_image, lr_image), dim=0)
         return lr_image, hr_image
 
     def __len__(self):
@@ -62,7 +67,17 @@ class TestDatasetFromFolder(Dataset):
         hr_image = Image.open(self.hr_filenames[index])
         hr_scale = Resize((self.upscale_factor * h, self.upscale_factor * w), interpolation=Image.BICUBIC)
         hr_restore_img = hr_scale(lr_image)
-        return image_name, ToTensor()(lr_image), ToTensor()(hr_restore_img), ToTensor()(hr_image)
+        lr_image, hr_restore_img, hr_image = ToTensor()(lr_image), ToTensor()(hr_restore_img), ToTensor()(hr_image)
+
+        # make sure the gray image to be 3 channel
+        if lr_image.size(0) == 1:
+            lr_image = torch.cat((lr_image, lr_image, lr_image), dim=0)
+        if hr_restore_img.size(0) == 1:
+            hr_restore_img = torch.cat((hr_restore_img, hr_restore_img, hr_restore_img), dim=0)
+        if hr_image.size(0) == 1:
+            hr_image = torch.cat((hr_image, hr_image, hr_image), dim=0)
+
+        return image_name, lr_image, hr_restore_img, hr_image
 
     def __len__(self):
         return len(self.lr_filenames)
