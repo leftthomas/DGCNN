@@ -11,7 +11,7 @@ from torchnet.logger import VisdomPlotLogger
 from tqdm import tqdm
 
 from model import Model
-from utils import PSNRValueMeter, SSIMValueMeter, TrainDatasetFromFolder, ValDatasetFromFolder
+from utils import PSNRValueMeter, SSIMValueMeter, TrainValDatasetFromFolder
 
 
 def processor(sample):
@@ -111,8 +111,8 @@ if __name__ == '__main__':
     # record current best val measures
     best_psnr, best_ssim = 0, 0
 
-    train_set = TrainDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
-    val_set = ValDatasetFromFolder(VAL_PATH, upscale_factor=UPSCALE_FACTOR)
+    train_set = TrainValDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
+    val_set = TrainValDatasetFromFolder(VAL_PATH, crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
     train_loader = DataLoader(dataset=train_set, num_workers=4, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(dataset=val_set, num_workers=4, batch_size=BATCH_SIZE, shuffle=False)
 
