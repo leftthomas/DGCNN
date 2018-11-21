@@ -52,7 +52,7 @@ optional arguments:
 
 ### Test Benchmark Datasets
 ```
-python test_benchmark.py
+python benchmark.py
 
 optional arguments:
 --upscale_factor              super resolution upscale factor [default value is 4](choices:[2, 3, 4, 8])
@@ -63,7 +63,7 @@ The output super resolution images are on `results` directory, and statistics on
 
 ### Test Single Image
 ```
-python test_image.py
+python single_image.py
 
 optional arguments:
 --upscale_factor              super resolution upscale factor [default value is 4](choices:[2, 3, 4, 8])
