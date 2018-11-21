@@ -28,10 +28,6 @@ def lr_transform(crop_size, upscale_factor):
     return Compose([ToPILImage(), Resize(crop_size // upscale_factor, interpolation=Image.BICUBIC), ToTensor()])
 
 
-def display_transform(crop_size):
-    return Compose([ToPILImage(), RandomCrop(crop_size, pad_if_needed=True), ToTensor()])
-
-
 class TrainValDatasetFromFolder(Dataset):
     def __init__(self, dataset_dir, crop_size, upscale_factor):
         super(TrainValDatasetFromFolder, self).__init__()
