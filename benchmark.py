@@ -47,12 +47,12 @@ for image_name, lr_image, hr_restore_img, hr_image in test_bar:
         lr_image, hr_image = lr_image.to('cuda'), hr_image.to('cuda')
 
     sr_image = model(lr_image)
-    mse = ((sr_image - hr_image) ** 2).mean().item()
+    mse = ((sr_image - hr_image) ** 2).mean().detach().cpu().item()
     psnr_value = 10 * log10(1 / mse)
-    ssim_value = ssim(sr_image, hr_image).item()
+    ssim_value = ssim(sr_image, hr_image).detach().cpu().item()
 
     image = torch.stack(
-        [hr_restore_img.squeeze(0), hr_image.cpu().detach().squeeze(0), sr_image.cpu().detach().squeeze(0)])
+        [hr_restore_img.squeeze(0), hr_image.detach().cpu().squeeze(0), sr_image.detach().cpu().squeeze(0)])
     utils.save_image(image, out_path + image_name.split('.')[0] + '_psnr_%.4f_ssim_%.4f.' % (psnr_value, ssim_value) +
                      image_name.split('.')[-1], nrow=1, padding=5, pad_value=255)
 
