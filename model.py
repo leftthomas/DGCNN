@@ -20,7 +20,7 @@ class Model(nn.Module):
         self.block6 = CapsuleConv2d(64, 64, 3, 16, 8, padding=1, similarity='tonimoto', squash=False)
         self.block7 = CapsuleConv2d(64, 64, 3, 8, 8, padding=1, similarity='tonimoto', squash=False)
         self.block8 = CapsuleConv2d(64, 64, 3, 8, 4, padding=1, similarity='tonimoto', squash=False)
-        self.block9 = nn.Sequential([UpsampleBlock(64, upscale_factor, 4, 4) for _ in range(upsample_block_num)])
+        self.block9 = nn.Sequential(*[UpsampleBlock(64, upscale_factor, 4, 4) for _ in range(upsample_block_num)])
         self.block10 = CapsuleConv2d(64, 3, 9, 4, 1, padding=4, similarity='tonimoto', squash=False)
 
     def forward(self, x):
