@@ -1,6 +1,6 @@
+import os
 from math import exp
 from math import log10
-from os import listdir
 from os.path import join
 
 import torch
@@ -31,7 +31,8 @@ def lr_transform(crop_size, upscale_factor):
 class TrainValDatasetFromFolder(Dataset):
     def __init__(self, dataset_dir, crop_size, upscale_factor):
         super(TrainValDatasetFromFolder, self).__init__()
-        self.image_filenames = [join(dataset_dir, x) for x in listdir(dataset_dir) if is_image_file(x)]
+        self.image_filenames = [join(root, file) for root, dirs, files in os.walk(dataset_dir) for file in files if
+                                is_image_file(file)]
         crop_size = calculate_valid_crop_size(crop_size, upscale_factor)
         self.hr_transform = hr_transform(crop_size)
         self.lr_transform = lr_transform(crop_size, upscale_factor)
@@ -51,8 +52,8 @@ class TestDatasetFromFolder(Dataset):
         self.lr_path = dataset_dir + '/SRF_' + str(upscale_factor) + '/data/'
         self.hr_path = dataset_dir + '/SRF_' + str(upscale_factor) + '/target/'
         self.upscale_factor = upscale_factor
-        self.lr_filenames = [join(self.lr_path, x) for x in listdir(self.lr_path) if is_image_file(x)]
-        self.hr_filenames = [join(self.hr_path, x) for x in listdir(self.hr_path) if is_image_file(x)]
+        self.lr_filenames = [join(self.lr_path, x) for x in os.listdir(self.lr_path) if is_image_file(x)]
+        self.hr_filenames = [join(self.hr_path, x) for x in os.listdir(self.hr_path) if is_image_file(x)]
 
     def __getitem__(self, index):
         image_name = self.lr_filenames[index].split('/')[-1]
@@ -141,4 +142,3 @@ class SSIMValueMeter(meter.Meter):
     def reset(self):
         self.n = 0
         self.sum = 0.0
-
