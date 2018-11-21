@@ -46,8 +46,8 @@ optional arguments:
 --upscale_factor              super resolution upscale factor [default value is 4](choices:[2, 3, 4, 8])
 --batch_size                  train batch size [default value is 32]
 --num_epochs                  train epoch number [default value is 100]
---train_path                  train image data path [default value is data/train]
---val_path                    val image data path [default value is data/val]
+--train_path                  train image data path [default value is data/ILSVRC2012_img_train]
+--val_path                    val image data path [default value is data/ILSVRC2012_img_val]
 ```
 
 ### Test Benchmark Datasets
