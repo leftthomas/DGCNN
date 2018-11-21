@@ -10,6 +10,8 @@ class Model(nn.Module):
         super(Model, self).__init__()
 
         upsample_block_num = int(math.log(upscale_factor, 2))
+        if upscale_factor % 2 == 0:
+            upscale_factor = 2
         self.block1 = CapsuleConv2d(3, 64, 9, 1, 4, padding=4, similarity='tonimoto', squash=False)
         self.block2 = CapsuleConv2d(64, 64, 3, 4, 8, padding=1, similarity='tonimoto', squash=False)
         self.block3 = CapsuleConv2d(64, 64, 3, 8, 8, padding=1, similarity='tonimoto', squash=False)
@@ -18,7 +20,7 @@ class Model(nn.Module):
         self.block6 = CapsuleConv2d(64, 64, 3, 16, 8, padding=1, similarity='tonimoto', squash=False)
         self.block7 = CapsuleConv2d(64, 64, 3, 8, 8, padding=1, similarity='tonimoto', squash=False)
         self.block8 = CapsuleConv2d(64, 64, 3, 8, 4, padding=1, similarity='tonimoto', squash=False)
-        self.block9 = nn.Sequential([UpsampleBlock(64, 2, 4, 4) for _ in range(upsample_block_num)])
+        self.block9 = nn.Sequential([UpsampleBlock(64, upscale_factor, 4, 4) for _ in range(upsample_block_num)])
         self.block10 = CapsuleConv2d(64, 3, 9, 4, 1, padding=4, similarity='tonimoto', squash=False)
 
     def forward(self, x):

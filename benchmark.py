@@ -13,7 +13,8 @@ from model import Model
 from utils import ssim, TestDatasetFromFolder
 
 parser = argparse.ArgumentParser(description='Test Benchmark Datasets')
-parser.add_argument('--upscale_factor', default=4, type=int, help='super resolution upscale factor')
+parser.add_argument('--upscale_factor', default=4, type=int, choices=[2, 3, 4, 8],
+                    help='super resolution upscale factor')
 parser.add_argument('--model_name', default='upscale_4.pth', type=str, help='super resolution model name')
 parser.add_argument('--test_path', default='data/test', type=str, help='test image data path')
 opt = parser.parse_args()
