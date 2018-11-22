@@ -1,4 +1,5 @@
 import os
+import random
 from math import exp
 from math import log10
 from os.path import join
@@ -163,15 +164,29 @@ if __name__ == '__main__':
     if not os.path.exists(val_path):
         os.makedirs(val_path)
     imagenet_paths = ['data/ILSVRC2012_img_train', 'data/ILSVRC2012_img_val']
+
+    train_images, val_images = [], []
     for path in imagenet_paths:
         for root, dirs, files in os.walk(path):
-            for file in tqdm(files, desc='generating %s dataset' % path.split('_')[-1]):
+            for file in tqdm(files, desc='preprocessing %s dataset' % path.split('_')[-1]):
                 if is_image_file(file):
                     # remove the EXIF data
                     piexif.remove(join(root, file))
                     image = Image.open(join(root, file))
                     if image.width >= 256 and image.height >= 256 and image.mode == 'RGB':
                         if path.endswith('train'):
-                            image.save(train_path + '/' + file)
+                            train_images.append(join(root, file))
                         else:
-                            image.save(val_path + '/' + file)
+                            val_images.append(join(root, file))
+
+    print('after preprocessing, the train image dataset contains %d images, '
+          'the val image dataset contains %d images' % (len(train_images), len(val_images)))
+
+    train_images = random.sample(train_images, 50000)
+    val_images = random.sample(val_images, 1000)
+    for filename in tqdm(train_images, desc='generating train dataset'):
+        image = Image.open(filename)
+        image.save(train_path + '/' + filename.split('/')[-1])
+    for filename in tqdm(val_images, desc='generating val dataset'):
+        image = Image.open(filename)
+        image.save(val_path + '/' + filename.split('/')[-1])
