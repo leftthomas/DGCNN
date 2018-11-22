@@ -162,9 +162,9 @@ if __name__ == '__main__':
     if not os.path.exists(val_path):
         os.makedirs(val_path)
     imagenet_paths = ['data/ILSVRC2012_img_train', 'data/ILSVRC2012_img_val']
-    for path in tqdm(imagenet_paths, desc='generating train and val datasets'):
+    for path in imagenet_paths:
         for root, dirs, files in os.walk(path):
-            for file in files:
+            for file in tqdm(files, desc='generating %s dataset' % path.split('_')[-1]):
                 if is_image_file(file):
                     image = Image.open(join(root, file))
                     if image.width >= 256 and image.height >= 256 and image.mode == 'RGB':
