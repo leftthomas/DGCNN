@@ -1,6 +1,5 @@
 import math
 
-import torch
 from capsule_layer import CapsuleConv2d
 from torch import nn
 
@@ -21,7 +20,7 @@ class Model(nn.Module):
         self.block7 = CapsuleConv2d(64, 64, 3, 8, 8, padding=1, similarity='tonimoto', squash=False)
         self.block8 = CapsuleConv2d(64, 64, 3, 8, 4, padding=1, similarity='tonimoto', squash=False)
         self.block9 = nn.Sequential(*[UpsampleBlock(64, upscale_factor, 4, 4) for _ in range(upsample_block_num)])
-        self.block10 = CapsuleConv2d(64, 3, 9, 4, 1, padding=4, similarity='tonimoto', squash=False)
+        self.block10 = CapsuleConv2d(64, 3, 9, 4, 1, padding=4, similarity='tonimoto')
 
     def forward(self, x):
         block1 = self.block1(x)
@@ -34,13 +33,14 @@ class Model(nn.Module):
         block8 = self.block8(block7)
         block9 = self.block9(block1 + block8)
         block10 = self.block10(block9)
-        return (torch.tanh(block10) + 1) / 2
+        return block10
 
 
 class UpsampleBlock(nn.Module):
     def __init__(self, in_channels, upscale_factor, in_length, out_length):
         super(UpsampleBlock, self).__init__()
-        self.conv = CapsuleConv2d(in_channels, in_channels * upscale_factor ** 2, 3, in_length, out_length, padding=1)
+        self.conv = CapsuleConv2d(in_channels, in_channels * upscale_factor ** 2, 3, in_length, out_length, padding=1,
+                                  similarity='tonimoto', squash=False)
         self.pixel_shuffle = nn.PixelShuffle(upscale_factor)
 
     def forward(self, x):
