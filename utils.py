@@ -45,11 +45,7 @@ class TrainValDatasetFromFolder(Dataset):
             hr_image = torch.cat((hr_image, hr_image, hr_image), dim=0)
         if lr_image.size(0) == 1:
             lr_image = torch.cat((lr_image, lr_image, lr_image), dim=0)
-        # for channel > 3, we only remain the RGB channels
-        if hr_image.size(0) > 3:
-            hr_image = hr_image[:3, :, :]
-        if lr_image.size(0) > 3:
-            lr_image = lr_image[:3, :, :]
+
         return lr_image, hr_image
 
     def __len__(self):
@@ -81,13 +77,6 @@ class TestDatasetFromFolder(Dataset):
             hr_restore_img = torch.cat((hr_restore_img, hr_restore_img, hr_restore_img), dim=0)
         if hr_image.size(0) == 1:
             hr_image = torch.cat((hr_image, hr_image, hr_image), dim=0)
-        # for channel > 3, we only remain the RGB channels
-        if lr_image.size(0) > 3:
-            lr_image = lr_image[:3, :, :]
-        if hr_restore_img.size(0) > 3:
-            hr_restore_img = hr_restore_img[:3, :, :]
-        if hr_image.size(0) > 3:
-            hr_image = hr_image[:3, :, :]
 
         return image_name, lr_image, hr_restore_img, hr_image
 

@@ -23,9 +23,6 @@ image = ToTensor()(image).unsqueeze(0)
 # make sure the gray image to be 3 channel
 if image.size(1) == 1:
     image = torch.cat((image, image, image), dim=1)
-# for channel > 3, we only remain the RGB channels
-if image.size(1) > 3:
-    image = image[:, :3, :, :]
 
 model = Model(UPSCALE_FACTOR).eval()
 if torch.cuda.is_available():
