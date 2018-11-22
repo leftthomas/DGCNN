@@ -9,6 +9,7 @@ from PIL import Image
 from torch.utils.data.dataset import Dataset
 from torchnet.meter import meter
 from torchvision.transforms import Compose, RandomCrop, ToTensor, ToPILImage, Resize
+from tqdm import tqdm
 
 
 def is_image_file(filename):
@@ -31,8 +32,7 @@ def lr_transform(crop_size, upscale_factor):
 class TrainValDatasetFromFolder(Dataset):
     def __init__(self, dataset_dir, crop_size, upscale_factor):
         super(TrainValDatasetFromFolder, self).__init__()
-        self.image_filenames = [join(root, file) for root, dirs, files in os.walk(dataset_dir) for file in files if
-                                is_image_file(file)]
+        self.image_filenames = [join(dataset_dir, x) for x in os.listdir(dataset_dir) if is_image_file(x)]
         crop_size = calculate_valid_crop_size(crop_size, upscale_factor)
         self.hr_transform = hr_transform(crop_size)
         self.lr_transform = lr_transform(crop_size, upscale_factor)
@@ -40,12 +40,6 @@ class TrainValDatasetFromFolder(Dataset):
     def __getitem__(self, index):
         hr_image = self.hr_transform(Image.open(self.image_filenames[index]))
         lr_image = self.lr_transform(hr_image)
-        # make sure the gray image to be 3 channel
-        if hr_image.size(0) == 1:
-            hr_image = torch.cat((hr_image, hr_image, hr_image), dim=0)
-        if lr_image.size(0) == 1:
-            lr_image = torch.cat((lr_image, lr_image, lr_image), dim=0)
-
         return lr_image, hr_image
 
     def __len__(self):
@@ -158,3 +152,23 @@ class SSIMValueMeter(meter.Meter):
     def reset(self):
         self.n = 0
         self.sum = 0.0
+
+
+if __name__ == '__main__':
+    train_path = 'data/train'
+    val_path = 'data/val'
+    if not os.path.exists(train_path):
+        os.makedirs(train_path)
+    if not os.path.exists(val_path):
+        os.makedirs(val_path)
+    imagenet_paths = ['data/ILSVRC2012_img_train', 'data/ILSVRC2012_img_val']
+    for path in tqdm(imagenet_paths, desc='generating train and val datasets'):
+        for root, dirs, files in os.walk(path):
+            for file in files:
+                if is_image_file(file):
+                    image = Image.open(join(root, file))
+                    if image.width >= 256 and image.height >= 256 and image.mode == 'RGB':
+                        if path.endswith('train'):
+                            image.save(train_path + '/' + file)
+                        else:
+                            image.save(val_path + '/' + file)

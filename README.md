@@ -19,11 +19,10 @@ pip install git+https://github.com/leftthomas/CapsuleLayer.git@master
 ## Datasets
 
 ### Train、Val Datasets
-The train and val datasets are from [ILSVRC2012](http://www.image-net.org/challenges/LSVRC/2012/).
-Train dataset has 1,282,167 images and Val dataset has 50,000 images.
+The train and val datasets are sampled from [ILSVRC2012](http://www.image-net.org/challenges/LSVRC/2012/).
 Download the train dataset from [here](http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_train.tar) 
 and val dataset from [here](http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_val.tar), 
-then extract them into `data` directory.
+then extract them into `data` directory. Finally, run `python utils.py` to generate the train and val datasets.
 
 ### Test Dataset
 The test dataset are from 
@@ -42,12 +41,12 @@ Download the test dataset from [BaiduYun](https://pan.baidu.com/s/1S9w3FAbncE-OT
 python -m visdom.server -logging_level WARNING & python train.py
 
 optional arguments:
---crop_size                   training images crop size [default value is 240]
+--crop_size                   training images crop size [default value is 120]
 --upscale_factor              super resolution upscale factor [default value is 4](choices:[2, 3, 4, 8])
---batch_size                  train batch size [default value is 32]
+--batch_size                  train batch size [default value is 16]
 --num_epochs                  train epoch number [default value is 100]
---train_path                  train image data path [default value is data/ILSVRC2012_img_train]
---val_path                    val image data path [default value is data/ILSVRC2012_img_val]
+--train_path                  train image data path [default value is data/train]
+--val_path                    val image data path [default value is data/val]
 ```
 Visdom now can be accessed by going to `127.0.0.1:8097/env/$upscale_factor` in your browser, 
 `$upscale_factor` means the upscale factor which you are training. If you want to interrupt 
