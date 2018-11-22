@@ -1,12 +1,12 @@
 import os
 import random
+from math import exp
+from math import log10
 from os.path import join
 
 import torch
 import torch.nn.functional as F
 from PIL import Image
-from math import exp
-from math import log10
 from torch.utils.data.dataset import Dataset
 from torchnet.meter import meter
 from torchvision.transforms import Compose, RandomCrop, ToTensor, ToPILImage, Resize
@@ -172,11 +172,11 @@ if __name__ == '__main__':
     if not os.path.exists(val_path):
         os.makedirs(val_path)
 
-    train_images = random.sample(images, 10000)
+    train_images = random.sample(images, 17000)
     val_images = list(set(images) - set(train_images))
-    for filename in tqdm(train_images, desc='generating train dataset'):
-        image = Image.open(filename)
-        image.save(train_path + '/' + filename.split('/')[-1])
-    for filename in tqdm(val_images, desc='generating val dataset'):
-        image = Image.open(filename)
-        image.save(val_path + '/' + filename.split('/')[-1])
+    for file_name in tqdm(train_images, desc='generating train dataset'):
+        image = Image.open(file_name)
+        image.save(train_path + '/' + file_name.split('/')[-1])
+    for file_name in tqdm(val_images, desc='generating val dataset'):
+        image = Image.open(file_name)
+        image.save(val_path + '/' + file_name.split('/')[-1])

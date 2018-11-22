@@ -21,10 +21,10 @@ pip install git+https://github.com/leftthomas/CapsuleLayer.git@master
 ### Train、Val Datasets
 The train and val datasets are sampled from [VOC2012](http://www.image-net.org/challenges/LSVRC/2012/).
 Download the original datasets from [Visual Object Classes Challenge 2012](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/index.html),
-and extract the `JPEGImages` directory into `data` directory, then change the directory name to `VOC2012`. 
+and extract the `JPEGImages` directory into `data` directory, then rename the directory name to `VOC2012`. 
 Finally, run `python utils.py` to generate the preprocessed train and val datasets. 
 
-The preprocessed images contains 12,000 images. We randomly sample 10,000 images as our final train dataset, 
+The preprocessed images contains 17,123 images. We randomly sample 17,000 images as our final train dataset, 
 and the remaining images as our final val dataset. This may take a while, you could also download the final train and 
 val datasets from [BaiduYun](https://pan.baidu.com/s/1S9w3FAbncE-OTQxnb5MtIg) or 
 [GoogleDrive](https://drive.google.com/open?id=1jvls4Z0cj470HMUQcNi5rSC4NdggGqHP), then extract them into `data` 
