@@ -20,9 +20,16 @@ pip install git+https://github.com/leftthomas/CapsuleLayer.git@master
 
 ### Train、Val Datasets
 The train and val datasets are sampled from [ILSVRC2012](http://www.image-net.org/challenges/LSVRC/2012/).
-Download the train dataset from [here](http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_train.tar) 
-and val dataset from [here](http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_val.tar), 
-then extract them into `data` directory. Finally, run `python utils.py` to generate the train and val datasets.
+Download the original train dataset from [here](http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_train.tar) 
+and original val dataset from [here](http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_val.tar), 
+then extract them into `data` directory. Finally, run `python utils.py` to generate the preprocessed train and 
+val datasets. 
+
+The preprocessed train dataset contains 1133,882 images, and val dataset contains 47,740 images. We 
+randomly sampled 50,000 images from train dataset as our final train dataset, and 1,000 images from val dataset as 
+our final val dataset. This may take a while, you could also download the final train and val datasets from 
+[BaiduYun](https://pan.baidu.com/s/1S9w3FAbncE-OTQxnb5MtIg), then extract them into `data` directory, now you just 
+needn't run `python utils.py` anymore.
 
 ### Test Dataset
 The test dataset are from 
