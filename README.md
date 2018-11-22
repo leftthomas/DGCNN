@@ -26,7 +26,7 @@ then extract them into `data` directory. Finally, run `python utils.py` to gener
 val datasets. 
 
 The preprocessed train dataset contains 1133,882 images, and val dataset contains 47,740 images. We 
-randomly sampled 50,000 images from train dataset as our final train dataset, and 1,000 images from val dataset as 
+randomly sampled 30,000 images from train dataset as our final train dataset, and 500 images from val dataset as 
 our final val dataset. This may take a while, you could also download the final train and val datasets from 
 [BaiduYun](https://pan.baidu.com/s/1S9w3FAbncE-OTQxnb5MtIg), then extract them into `data` directory, now you just 
 needn't run `python utils.py` anymore.

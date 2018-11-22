@@ -178,7 +178,7 @@ if __name__ == '__main__':
         os.makedirs(train_path)
     if not os.path.exists(val_path):
         os.makedirs(val_path)
-    train_images, val_images = random.sample(train_images, 50000), random.sample(val_images, 1000)
+    train_images, val_images = random.sample(train_images, 30000), random.sample(val_images, 500)
     for filename in tqdm(train_images, desc='generating train dataset'):
         image = Image.open(filename)
         image.save(train_path + '/' + filename.split('/')[-1])
