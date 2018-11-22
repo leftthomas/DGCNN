@@ -1,5 +1,6 @@
 # SRCapsNet
-A PyTorch implementation of Super-Resolution Capsule Network based on the paper [xxx](xxx).
+A PyTorch implementation of Convolutional Capsule Network for Super-Resolution based on the paper 
+[Convolutional Capsule Network For Single Image Super-resolution](xxx).
 
 ## Requirements
 - [Anaconda](https://www.anaconda.com/download/)
@@ -26,8 +27,8 @@ Finally, run `python utils.py` to generate the preprocessed train and val datase
 
 The preprocessed images contains 17,123 images. We randomly sample 17,000 images as our final train dataset, 
 and the remaining images as our final val dataset. This may take a while, you could also download the final train and 
-val datasets from [BaiduYun](https://pan.baidu.com/s/1S9w3FAbncE-OTQxnb5MtIg) or 
-[GoogleDrive](https://drive.google.com/open?id=1jvls4Z0cj470HMUQcNi5rSC4NdggGqHP), then extract them into `data` 
+val datasets from [BaiduYun](https://pan.baidu.com/s/1sk4oRgLtgcXa6Lt4D27rfw) or 
+[GoogleDrive](https://drive.google.com/open?id=1Hz0jniNp0Qq3mnIb_f5xM9iHJ_oauook), then extract them into `data` 
 directory, then you just needn't run `python utils.py` anymore.
 
 ### Test Dataset
