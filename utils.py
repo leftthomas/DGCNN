@@ -156,12 +156,6 @@ class SSIMValueMeter(meter.Meter):
 
 
 if __name__ == '__main__':
-    train_path = 'data/train'
-    val_path = 'data/val'
-    if not os.path.exists(train_path):
-        os.makedirs(train_path)
-    if not os.path.exists(val_path):
-        os.makedirs(val_path)
     imagenet_paths = ['data/ILSVRC2012_img_train', 'data/ILSVRC2012_img_val']
 
     train_images, val_images = [], []
@@ -179,8 +173,12 @@ if __name__ == '__main__':
     print('after preprocessing, the train image dataset contains %d images, '
           'the val image dataset contains %d images' % (len(train_images), len(val_images)))
 
-    train_images = random.sample(train_images, 50000)
-    val_images = random.sample(val_images, 1000)
+    train_path, val_path = 'data/train', 'data/val'
+    if not os.path.exists(train_path):
+        os.makedirs(train_path)
+    if not os.path.exists(val_path):
+        os.makedirs(val_path)
+    train_images, val_images = random.sample(train_images, 50000), random.sample(val_images, 1000)
     for filename in tqdm(train_images, desc='generating train dataset'):
         image = Image.open(filename)
         image.save(train_path + '/' + filename.split('/')[-1])
