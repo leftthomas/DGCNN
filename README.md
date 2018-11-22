@@ -15,10 +15,6 @@ pip install git+https://github.com/pytorch/tnt.git@master
 ```
 pip install git+https://github.com/leftthomas/CapsuleLayer.git@master
 ```
-- piexif
-```
-pip install piexif
-```
 
 ## Datasets
 

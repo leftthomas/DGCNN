@@ -4,7 +4,6 @@ from math import exp
 from math import log10
 from os.path import join
 
-import piexif
 import torch
 import torch.nn.functional as F
 from PIL import Image
@@ -170,8 +169,6 @@ if __name__ == '__main__':
         for root, dirs, files in os.walk(path):
             for file in tqdm(files, desc='preprocessing %s dataset' % path.split('_')[-1]):
                 if is_image_file(file):
-                    # remove the EXIF data
-                    piexif.remove(join(root, file))
                     image = Image.open(join(root, file))
                     if image.width >= 256 and image.height >= 256 and image.mode == 'RGB':
                         if path.endswith('train'):
