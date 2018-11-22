@@ -84,7 +84,7 @@ def on_end_epoch(state):
                                         'train_ssim': results['train_ssim'], 'val_loss': results['val_loss'],
                                         'val_psnr': results['val_psnr'], 'val_ssim': results['val_ssim']},
                                   index=range(1, state['epoch'] + 1))
-        data_frame.to_csv('statistics/upscale_' + UPSCALE_FACTOR + '_results.csv', index_label='epoch')
+        data_frame.to_csv('statistics/upscale_%d_results.csv' % UPSCALE_FACTOR, index_label='epoch')
 
 
 if __name__ == '__main__':
