@@ -19,17 +19,16 @@ pip install git+https://github.com/leftthomas/CapsuleLayer.git@master
 ## Datasets
 
 ### Train、Val Datasets
-The train and val datasets are sampled from [ILSVRC2012](http://www.image-net.org/challenges/LSVRC/2012/).
-Download the original train dataset from [here](http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_train.tar) 
-and original val dataset from [here](http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_val.tar), 
-then extract them into `data` directory. Finally, run `python utils.py` to generate the preprocessed train and 
-val datasets. 
+The train and val datasets are sampled from [VOC2012](http://www.image-net.org/challenges/LSVRC/2012/).
+Download the original datasets from [Visual Object Classes Challenge 2012](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/index.html),
+and extract the `JPEGImages` directory into `data` directory, then change the directory name to `VOC2012`. 
+Finally, run `python utils.py` to generate the preprocessed train and val datasets. 
 
-The preprocessed train dataset contains 1133,882 images, and val dataset contains 47,740 images. We 
-randomly sampled 30,000 images from train dataset as our final train dataset, and 500 images from val dataset as 
-our final val dataset. This may take a while, you could also download the final train and val datasets from 
-[BaiduYun](https://pan.baidu.com/s/1S9w3FAbncE-OTQxnb5MtIg), then extract them into `data` directory, now you just 
-needn't run `python utils.py` anymore.
+The preprocessed images contains 12,000 images. We randomly sample 10,000 images as our final train dataset, 
+and the remaining images as our final val dataset. This may take a while, you could also download the final train and 
+val datasets from [BaiduYun](https://pan.baidu.com/s/1S9w3FAbncE-OTQxnb5MtIg) or 
+[GoogleDrive](https://drive.google.com/open?id=1jvls4Z0cj470HMUQcNi5rSC4NdggGqHP), then extract them into `data` 
+directory, then you just needn't run `python utils.py` anymore.
 
 ### Test Dataset
 The test dataset are from 
@@ -48,7 +47,7 @@ Download the test dataset from [BaiduYun](https://pan.baidu.com/s/1S9w3FAbncE-OT
 python -m visdom.server -logging_level WARNING & python train.py
 
 optional arguments:
---crop_size                   training images crop size [default value is 120]
+--crop_size                   training images crop size [default value is 96]
 --upscale_factor              super resolution upscale factor [default value is 4](choices:[2, 3, 4, 8])
 --batch_size                  train batch size [default value is 16]
 --num_epochs                  train epoch number [default value is 100]

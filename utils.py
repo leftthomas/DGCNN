@@ -1,12 +1,12 @@
 import os
 import random
-from math import exp
-from math import log10
 from os.path import join
 
 import torch
 import torch.nn.functional as F
 from PIL import Image
+from math import exp
+from math import log10
 from torch.utils.data.dataset import Dataset
 from torchnet.meter import meter
 from torchvision.transforms import Compose, RandomCrop, ToTensor, ToPILImage, Resize
@@ -156,29 +156,24 @@ class SSIMValueMeter(meter.Meter):
 
 
 if __name__ == '__main__':
-    imagenet_paths = ['data/ILSVRC2012_img_train', 'data/ILSVRC2012_img_val']
 
-    train_images, val_images = [], []
-    for path in imagenet_paths:
-        for root, dirs, files in os.walk(path):
-            for file in tqdm(files, desc='preprocessing %s dataset' % path.split('_')[-1]):
-                if is_image_file(file):
-                    image = Image.open(join(root, file))
-                    if image.width >= 256 and image.height >= 256 and image.mode == 'RGB':
-                        if path.endswith('train'):
-                            train_images.append(join(root, file))
-                        else:
-                            val_images.append(join(root, file))
+    image_path, images = 'data/VOC2012', []
+    for file in tqdm(os.listdir(image_path), desc='preprocessing dataset'):
+        if is_image_file(file):
+            image = Image.open(join(image_path, file))
+            if image.width >= 96 and image.height >= 96 and image.mode == 'RGB':
+                images.append(join(image_path, file))
 
-    print('after preprocessing, the train image dataset contains %d images, '
-          'the val image dataset contains %d images' % (len(train_images), len(val_images)))
+    print('after preprocessing, the image dataset contains %d images' % len(images))
 
     train_path, val_path = 'data/train', 'data/val'
     if not os.path.exists(train_path):
         os.makedirs(train_path)
     if not os.path.exists(val_path):
         os.makedirs(val_path)
-    train_images, val_images = random.sample(train_images, 30000), random.sample(val_images, 500)
+
+    train_images = random.sample(images, 10000)
+    val_images = list(set(images) - set(train_images))
     for filename in tqdm(train_images, desc='generating train dataset'):
         image = Image.open(filename)
         image.save(train_path + '/' + filename.split('/')[-1])
