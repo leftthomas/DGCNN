@@ -11,7 +11,7 @@ from torchnet.logger import VisdomPlotLogger
 from tqdm import tqdm
 
 from model import Model
-from utils import PSNRValueMeter, SSIMValueMeter, TrainValDatasetFromFolder
+from utils import PSNRValueMeter, SSIMValueMeter, TrainValDatasetFromFolder, SSIM
 
 
 def processor(sample):
@@ -23,7 +23,7 @@ def processor(sample):
     model.train(training)
 
     classes = model(data)
-    loss = loss_criterion(classes, labels)
+    loss = mse_loss(classes, labels) + 1 - ssim_loss(classes, labels)
     return loss, classes
 
 
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     val_loader = DataLoader(dataset=val_set, num_workers=4, batch_size=BATCH_SIZE, shuffle=False)
 
     model = Model(UPSCALE_FACTOR)
-    loss_criterion = nn.MSELoss()
+    mse_loss, ssim_loss = nn.MSELoss(), SSIM()
     if torch.cuda.is_available():
         model = model.to('cuda')
     print("# parameters:", sum(param.numel() for param in model.parameters()))
