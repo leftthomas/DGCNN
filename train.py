@@ -90,7 +90,7 @@ def on_end_epoch(state):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Train Super Resolution Models')
-    parser.add_argument('--crop_size', default=128, type=int, help='training images crop size')
+    parser.add_argument('--input_size', default=32, type=int, help='training images input size')
     parser.add_argument('--upscale_factor', default=4, type=int, choices=[2, 3, 4, 8],
                         help='super resolution upscale factor')
     parser.add_argument('--batch_size', default=10, type=int, help='train batch size')
@@ -100,8 +100,8 @@ if __name__ == '__main__':
 
     opt = parser.parse_args()
 
-    CROP_SIZE = opt.crop_size
     UPSCALE_FACTOR = opt.upscale_factor
+    CROP_SIZE = opt.input_size * UPSCALE_FACTOR
     BATCH_SIZE = opt.batch_size
     NUM_EPOCHS = opt.num_epochs
     TRAIN_PATH = opt.train_path
