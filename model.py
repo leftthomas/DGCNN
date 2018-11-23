@@ -12,12 +12,12 @@ class Model(nn.Module):
         if upscale_factor % 2 == 0:
             upscale_factor = 2
         self.block1 = CapsuleConv2d(3, 64, 9, 1, 4, padding=4, similarity='tonimoto', squash=False)
-        self.block2 = CapsuleConv2d(64, 64, 3, 4, 8, padding=1, similarity='tonimoto', squash=False)
-        self.block3 = CapsuleConv2d(64, 64, 3, 8, 8, padding=1, similarity='tonimoto', squash=False)
-        self.block4 = CapsuleConv2d(64, 64, 3, 8, 16, padding=1, similarity='tonimoto', squash=False)
-        self.block5 = CapsuleConv2d(64, 64, 3, 16, 16, padding=1, similarity='tonimoto', squash=False)
-        self.block6 = CapsuleConv2d(64, 64, 3, 16, 8, padding=1, similarity='tonimoto', squash=False)
-        self.block7 = CapsuleConv2d(64, 64, 3, 8, 8, padding=1, similarity='tonimoto', squash=False)
+        self.block2 = ResidualBlock(64, 4, 8)
+        self.block3 = ResidualBlock(64, 8, 8)
+        self.block4 = ResidualBlock(64, 8, 16)
+        self.block5 = ResidualBlock(64, 16, 16)
+        self.block6 = ResidualBlock(64, 16, 8)
+        self.block7 = ResidualBlock(64, 8, 8)
         self.block8 = CapsuleConv2d(64, 64, 3, 8, 4, padding=1, similarity='tonimoto', squash=False)
         self.block9 = nn.Sequential(*[UpsampleBlock(64, upscale_factor, 4, 4) for _ in range(upsample_block_num)])
         self.block10 = CapsuleConv2d(64, 3, 9, 4, 1, padding=4, similarity='tonimoto')
@@ -34,6 +34,25 @@ class Model(nn.Module):
         block9 = self.block9(block1 + block8)
         block10 = self.block10(block9)
         return block10
+
+
+class ResidualBlock(nn.Module):
+    def __init__(self, channels, in_length, out_length):
+        super(ResidualBlock, self).__init__()
+        self.conv1 = CapsuleConv2d(channels, channels, 3, in_length, out_length, padding=1, similarity='tonimoto',
+                                   squash=False)
+        self.bn1 = nn.BatchNorm2d(channels)
+        self.conv2 = CapsuleConv2d(channels, channels, 3, out_length, out_length, padding=1, similarity='tonimoto',
+                                   squash=False)
+        self.bn2 = nn.BatchNorm2d(channels)
+
+    def forward(self, x):
+        residual = self.conv1(x)
+        residual = self.bn1(residual)
+        residual = self.conv2(residual)
+        residual = self.bn2(residual)
+
+        return x + residual
 
 
 class UpsampleBlock(nn.Module):
