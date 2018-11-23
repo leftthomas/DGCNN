@@ -13,12 +13,14 @@ class Model(nn.Module):
             upscale_factor = 2
         self.block1 = CapsuleConv2d(3, 64, 9, 1, 4, padding=4, similarity='tonimoto', squash=False)
         self.block2 = CapsuleConv2d(64, 64, 3, 4, 8, padding=1, similarity='tonimoto', squash=False)
-        self.block3 = CapsuleConv2d(64, 64, 3, 8, 16, padding=1, similarity='tonimoto', squash=False)
-        self.block4 = CapsuleConv2d(64, 64, 3, 16, 16, padding=1, similarity='tonimoto', squash=False)
-        self.block5 = CapsuleConv2d(64, 64, 3, 16, 8, padding=1, similarity='tonimoto', squash=False)
-        self.block6 = CapsuleConv2d(64, 64, 3, 8, 4, padding=1, similarity='tonimoto', squash=False)
-        self.block7 = nn.Sequential(*[UpsampleBlock(64, upscale_factor, 4, 4) for _ in range(upsample_block_num)])
-        self.block8 = CapsuleConv2d(64, 3, 9, 4, 1, padding=4, similarity='tonimoto')
+        self.block3 = CapsuleConv2d(64, 64, 3, 8, 8, padding=1, similarity='tonimoto', squash=False)
+        self.block4 = CapsuleConv2d(64, 64, 3, 8, 16, padding=1, similarity='tonimoto', squash=False)
+        self.block5 = CapsuleConv2d(64, 64, 3, 16, 16, padding=1, similarity='tonimoto', squash=False)
+        self.block6 = CapsuleConv2d(64, 64, 3, 16, 8, padding=1, similarity='tonimoto', squash=False)
+        self.block7 = CapsuleConv2d(64, 64, 3, 8, 8, padding=1, similarity='tonimoto', squash=False)
+        self.block8 = CapsuleConv2d(64, 64, 3, 8, 4, padding=1, similarity='tonimoto', squash=False)
+        self.block9 = nn.Sequential(*[UpsampleBlock(64, upscale_factor, 4, 4) for _ in range(upsample_block_num)])
+        self.block10 = CapsuleConv2d(64, 3, 9, 4, 1, padding=4, similarity='tonimoto')
 
     def forward(self, x):
         block1 = self.block1(x)
@@ -27,9 +29,11 @@ class Model(nn.Module):
         block4 = self.block4(block3)
         block5 = self.block5(block4)
         block6 = self.block6(block5)
-        block7 = self.block7(block1 + block6)
+        block7 = self.block7(block6)
         block8 = self.block8(block7)
-        return block8
+        block9 = self.block9(block1 + block8)
+        block10 = self.block10(block9)
+        return block10
 
 
 class UpsampleBlock(nn.Module):
