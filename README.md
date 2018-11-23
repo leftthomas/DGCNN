@@ -20,16 +20,10 @@ pip install git+https://github.com/leftthomas/CapsuleLayer.git@master
 ## Datasets
 
 ### Train、Val Datasets
-The train and val datasets are sampled from [VOC2012](http://www.image-net.org/challenges/LSVRC/2012/).
-Download the original datasets from [Visual Object Classes Challenge 2012](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/index.html),
-and extract the `JPEGImages` directory into `data` directory, then rename the directory name to `VOC2012`. 
-Finally, run `python utils.py` to generate the preprocessed train and val datasets. 
-
-The preprocessed images contains 17,123 images. We randomly sample 17,000 images as our final train dataset, 
-and the remaining images as our final val dataset. This may take a while, you could also download the final train and 
-val datasets from [BaiduYun](https://pan.baidu.com/s/1sk4oRgLtgcXa6Lt4D27rfw) or 
-[GoogleDrive](https://drive.google.com/open?id=1Hz0jniNp0Qq3mnIb_f5xM9iHJ_oauook), then extract them into `data` 
-directory, then you just needn't run `python utils.py` anymore.
+The train and val datasets are from [DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/).
+Download the original datasets from there, and extract the `DIV2K_train_HR` directory into `data` directory, then 
+rename the directory name to `train`, extract the `DIV2K_valid_HR` directory into `data` directory, then 
+rename the directory name to `val`. 
 
 ### Test Dataset
 The test dataset are from 
@@ -48,9 +42,9 @@ Download the test dataset from [BaiduYun](https://pan.baidu.com/s/1S9w3FAbncE-OT
 python -m visdom.server -logging_level WARNING & python train.py
 
 optional arguments:
---crop_size                   training images crop size [default value is 96]
+--crop_size                   training images crop size [default value is 128]
 --upscale_factor              super resolution upscale factor [default value is 4](choices:[2, 3, 4, 8])
---batch_size                  train batch size [default value is 16]
+--batch_size                  train batch size [default value is 10]
 --num_epochs                  train epoch number [default value is 100]
 --train_path                  train image data path [default value is data/train]
 --val_path                    val image data path [default value is data/val]

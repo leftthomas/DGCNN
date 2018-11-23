@@ -1,5 +1,4 @@
 import os
-import random
 from math import exp
 from math import log10
 from os.path import join
@@ -11,7 +10,6 @@ from torch.utils.data.dataset import Dataset
 from torchnet.meter import meter
 from torchvision.transforms import Compose, RandomCrop, ToTensor, ToPILImage, Resize, \
     RandomHorizontalFlip, RandomVerticalFlip
-from tqdm import tqdm
 
 
 def is_image_file(filename):
@@ -156,29 +154,3 @@ class SSIMValueMeter(meter.Meter):
         self.n = 0
         self.sum = 0.0
 
-
-if __name__ == '__main__':
-
-    image_path, images = 'data/VOC2012', []
-    for file in tqdm(os.listdir(image_path), desc='preprocessing dataset'):
-        if is_image_file(file):
-            image = Image.open(join(image_path, file))
-            if image.width >= 96 and image.height >= 96 and image.mode == 'RGB':
-                images.append(join(image_path, file))
-
-    print('after preprocessing, the image dataset contains %d images' % len(images))
-
-    train_path, val_path = 'data/train', 'data/val'
-    if not os.path.exists(train_path):
-        os.makedirs(train_path)
-    if not os.path.exists(val_path):
-        os.makedirs(val_path)
-
-    train_images = random.sample(images, 17000)
-    val_images = list(set(images) - set(train_images))
-    for file_name in tqdm(train_images, desc='generating train dataset'):
-        image = Image.open(file_name)
-        image.save(train_path + '/' + file_name.split('/')[-1])
-    for file_name in tqdm(val_images, desc='generating val dataset'):
-        image = Image.open(file_name)
-        image.save(val_path + '/' + file_name.split('/')[-1])
