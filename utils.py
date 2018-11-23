@@ -9,7 +9,8 @@ import torch.nn.functional as F
 from PIL import Image
 from torch.utils.data.dataset import Dataset
 from torchnet.meter import meter
-from torchvision.transforms import Compose, RandomCrop, ToTensor, ToPILImage, Resize
+from torchvision.transforms import Compose, RandomCrop, ToTensor, ToPILImage, Resize, \
+    RandomHorizontalFlip, RandomVerticalFlip
 from tqdm import tqdm
 
 
@@ -23,7 +24,8 @@ def calculate_valid_crop_size(crop_size, upscale_factor):
 
 
 def hr_transform(crop_size):
-    return Compose([RandomCrop(crop_size, pad_if_needed=True), ToTensor()])
+    return Compose(
+        [RandomCrop(crop_size, pad_if_needed=True), RandomHorizontalFlip(), RandomVerticalFlip(), ToTensor()])
 
 
 def lr_transform(crop_size, upscale_factor):

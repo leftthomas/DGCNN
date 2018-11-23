@@ -42,15 +42,10 @@ class ResidualBlock(nn.Module):
         self.conv1 = CapsuleConv2d(channels, channels, 3, in_length, out_length, padding=1, similarity='tonimoto',
                                    squash=False)
         self.bn1 = nn.BatchNorm2d(channels)
-        self.conv2 = CapsuleConv2d(channels, channels, 3, out_length, out_length, padding=1, similarity='tonimoto',
-                                   squash=False)
-        self.bn2 = nn.BatchNorm2d(channels)
 
     def forward(self, x):
         residual = self.conv1(x)
         residual = self.bn1(residual)
-        residual = self.conv2(residual)
-        residual = self.bn2(residual)
 
         return x + residual
 
