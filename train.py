@@ -117,7 +117,7 @@ if __name__ == '__main__':
     val_loader = DataLoader(dataset=val_set, num_workers=4, batch_size=BATCH_SIZE, shuffle=False)
 
     model = Model(UPSCALE_FACTOR)
-    loss_criterion = nn.MSELoss()
+    loss_criterion = nn.L1Loss()
     if torch.cuda.is_available():
         model = model.to('cuda')
     print("# parameters:", sum(param.numel() for param in model.parameters()))
