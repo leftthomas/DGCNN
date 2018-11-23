@@ -42,8 +42,10 @@ class UpsampleBlock(nn.Module):
         self.conv = CapsuleConv2d(in_channels, in_channels * upscale_factor ** 2, 3, in_length, out_length, padding=1,
                                   similarity='tonimoto')
         self.pixel_shuffle = nn.PixelShuffle(upscale_factor)
+        self.prelu = nn.PReLU()
 
     def forward(self, x):
         x = self.conv(x)
         x = self.pixel_shuffle(x)
+        x = self.prelu(x)
         return x
