@@ -9,7 +9,7 @@ from PIL import Image
 from torch.utils.data.dataset import Dataset
 from torchnet.meter import meter
 from torchvision.transforms import Compose, RandomCrop, ToTensor, ToPILImage, Resize, \
-    RandomHorizontalFlip, RandomVerticalFlip
+    RandomHorizontalFlip, RandomVerticalFlip, CenterCrop
 
 
 def is_image_file(filename):
@@ -21,9 +21,12 @@ def calculate_valid_crop_size(crop_size, upscale_factor):
     return crop_size - (crop_size % upscale_factor)
 
 
-def hr_transform(crop_size):
-    return Compose(
-        [RandomCrop(crop_size, pad_if_needed=True), RandomHorizontalFlip(), RandomVerticalFlip(), ToTensor()])
+def train_hr_transform(crop_size):
+    return Compose([RandomCrop(crop_size), RandomHorizontalFlip(), RandomVerticalFlip(), ToTensor()])
+
+
+def val_hr_transform(crop_size):
+    return Compose([Resize(crop_size, interpolation=Image.BICUBIC), CenterCrop(crop_size), ToTensor()])
 
 
 def lr_transform(crop_size, upscale_factor):
@@ -31,11 +34,14 @@ def lr_transform(crop_size, upscale_factor):
 
 
 class TrainValDatasetFromFolder(Dataset):
-    def __init__(self, dataset_dir, crop_size, upscale_factor):
+    def __init__(self, dataset_dir, crop_size, upscale_factor, is_train=True):
         super(TrainValDatasetFromFolder, self).__init__()
         self.image_filenames = [join(dataset_dir, x) for x in os.listdir(dataset_dir) if is_image_file(x)]
         crop_size = calculate_valid_crop_size(crop_size, upscale_factor)
-        self.hr_transform = hr_transform(crop_size)
+        if is_train:
+            self.hr_transform = train_hr_transform(crop_size)
+        else:
+            self.hr_transform = val_hr_transform(crop_size)
         self.lr_transform = lr_transform(crop_size, upscale_factor)
 
     def __getitem__(self, index):
