@@ -91,9 +91,9 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Train Super Resolution Models')
     parser.add_argument('--input_size', default=32, type=int, help='training images input size')
-    parser.add_argument('--upscale_factor', default=4, type=int, choices=[2, 3, 4, 8],
+    parser.add_argument('--upscale_factor', default=4, type=int, choices=[2, 3, 4],
                         help='super resolution upscale factor')
-    parser.add_argument('--batch_size', default=10, type=int, help='train batch size')
+    parser.add_argument('--batch_size', default=8, type=int, help='train batch size')
     parser.add_argument('--num_epochs', default=100, type=int, help='train epoch number')
     parser.add_argument('--train_path', default='data/train', type=str, help='train image data path')
     parser.add_argument('--val_path', default='data/val', type=str, help='val image data path')

@@ -43,8 +43,8 @@ python -m visdom.server -logging_level WARNING & python train.py
 
 optional arguments:
 --input_size                  training images input size [default value is 32]
---upscale_factor              super resolution upscale factor [default value is 4](choices:[2, 3, 4, 8])
---batch_size                  train batch size [default value is 10]
+--upscale_factor              super resolution upscale factor [default value is 4](choices:[2, 3, 4])
+--batch_size                  train batch size [default value is 8]
 --num_epochs                  train epoch number [default value is 100]
 --train_path                  train image data path [default value is data/train]
 --val_path                    val image data path [default value is data/val]
@@ -58,7 +58,7 @@ this process, just type `ps aux | grep visdom` to find the `PID`, then `kill PID
 python benchmark.py
 
 optional arguments:
---upscale_factor              super resolution upscale factor [default value is 4](choices:[2, 3, 4, 8])
+--upscale_factor              super resolution upscale factor [default value is 4](choices:[2, 3, 4])
 --model_name                  super resolution model name [default value is upscale_4.pth]
 --test_path                   test image data path [default value is data/test]
 ```
@@ -69,7 +69,7 @@ The output super resolution images are on `results` directory, and statistics on
 python single_image.py
 
 optional arguments:
---upscale_factor              super resolution upscale factor [default value is 4](choices:[2, 3, 4, 8])
+--upscale_factor              super resolution upscale factor [default value is 4](choices:[2, 3, 4])
 --image_name                  test low resolution image name
 --model_name                  super resolution model name [default value is upscale_4.pth]
 ```
