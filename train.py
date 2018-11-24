@@ -90,7 +90,7 @@ def on_end_epoch(state):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Train Super Resolution Models')
-    parser.add_argument('--input_size', default=32, type=int, help='training images input size')
+    parser.add_argument('--input_size', default=64, type=int, help='training images input size')
     parser.add_argument('--upscale_factor', default=4, type=int, choices=[2, 3, 4],
                         help='super resolution upscale factor')
     parser.add_argument('--batch_size', default=8, type=int, help='train batch size')
