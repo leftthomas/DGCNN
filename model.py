@@ -1,6 +1,6 @@
 import math
 
-import torch
+from capsule_layer import CapsuleConv2d
 from torch import nn
 
 
@@ -11,7 +11,7 @@ class Model(nn.Module):
         upsample_block_num = int(math.log(upscale_factor, 2))
         if upscale_factor % 2 == 0:
             upscale_factor = 2
-        self.block1 = nn.Sequential(nn.Conv2d(3, 64, kernel_size=9, padding=4), nn.PReLU())
+        self.block1 = CapsuleConv2d(3, 64, 9, 1, 4, padding=4, similarity='tonimoto')
         self.block2 = ResidualBlock(64)
         self.block3 = ResidualBlock(64)
         self.block4 = ResidualBlock(64)
@@ -19,7 +19,7 @@ class Model(nn.Module):
         self.block6 = ResidualBlock(64)
         self.block7 = nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1), nn.PReLU())
         block8 = [UpsampleBlock(64, upscale_factor) for _ in range(upsample_block_num)]
-        block8.append(nn.Conv2d(64, 3, kernel_size=9, padding=4))
+        block8.append(CapsuleConv2d(64, 3, 9, 4, 1, padding=4, similarity='tonimoto'))
         self.block8 = nn.Sequential(*block8)
 
     def forward(self, x):
@@ -32,7 +32,7 @@ class Model(nn.Module):
         block7 = self.block7(block6)
         block8 = self.block8(block1 + block7)
 
-        return (torch.tanh(block8) + 1) / 2
+        return block8
 
 
 class ResidualBlock(nn.Module):

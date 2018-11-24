@@ -24,7 +24,7 @@ MODEL_NAME = opt.model_name
 TEST_PATH = opt.test_path
 
 results = {'Set5': {'psnr': [], 'ssim': []}, 'Set14': {'psnr': [], 'ssim': []}, 'BSD100': {'psnr': [], 'ssim': []},
-           'Urban100': {'psnr': [], 'ssim': []}, 'SunHays80': {'psnr': [], 'ssim': []}}
+           'Urban100': {'psnr': [], 'ssim': []}}
 
 model = Model(UPSCALE_FACTOR).eval()
 if torch.cuda.is_available():
