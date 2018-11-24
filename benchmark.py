@@ -54,7 +54,7 @@ for image_name, lr_image, hr_restore_img, hr_image in test_bar:
     image = torch.stack(
         [hr_restore_img.squeeze(0), hr_image.detach().cpu().squeeze(0), sr_image.detach().cpu().squeeze(0)])
     utils.save_image(image, out_path + image_name.split('.')[0] + '_psnr_%.4f_ssim_%.4f.' % (psnr_value, ssim_value) +
-                     image_name.split('.')[-1], nrow=1, padding=5, pad_value=255)
+                     image_name.split('.')[-1], nrow=3, padding=5, pad_value=255)
 
     # save psnr\ssim
     results[image_name.split('_')[0]]['psnr'].append(psnr_value)
