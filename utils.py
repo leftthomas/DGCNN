@@ -6,8 +6,10 @@ from os.path import join
 import torch
 import torch.nn.functional as F
 from PIL import Image
+from torch import nn
 from torch.utils.data.dataset import Dataset
 from torchnet.meter import meter
+from torchvision.models.vgg import vgg16
 from torchvision.transforms import Compose, RandomCrop, ToTensor, ToPILImage, Resize, \
     RandomHorizontalFlip, RandomVerticalFlip, CenterCrop
 
@@ -113,32 +115,6 @@ def _ssim(img1, img2, window, window_size, channel, size_average=True):
         return ssim_map.mean(1).mean(1).mean(1)
 
 
-class SSIM(torch.nn.Module):
-    def __init__(self, window_size=11, size_average=True):
-        super(SSIM, self).__init__()
-        self.window_size = window_size
-        self.size_average = size_average
-        self.channel = 1
-        self.window = create_window(window_size, self.channel)
-
-    def forward(self, img1, img2):
-        (_, channel, _, _) = img1.size()
-
-        if channel == self.channel and self.window.data.type() == img1.data.type():
-            window = self.window
-        else:
-            window = create_window(self.window_size, channel)
-
-            if img1.is_cuda:
-                window = window.cuda(img1.get_device())
-            window = window.type_as(img1)
-
-            self.window = window
-            self.channel = channel
-
-        return _ssim(img1, img2, window, self.window_size, channel, self.size_average)
-
-
 def ssim(img1, img2, window_size=11, size_average=True):
     (_, channel, _, _) = img1.size()
     window = create_window(window_size, channel)
@@ -188,3 +164,70 @@ class SSIMValueMeter(meter.Meter):
     def reset(self):
         self.n = 0
         self.sum = 0.0
+
+
+class SSIMLoss(torch.nn.Module):
+    def __init__(self, window_size=11, size_average=True):
+        super(SSIMLoss, self).__init__()
+        self.window_size = window_size
+        self.size_average = size_average
+        self.channel = 1
+        self.window = create_window(window_size, self.channel)
+
+    def forward(self, img1, img2):
+        (_, channel, _, _) = img1.size()
+
+        if channel == self.channel and self.window.data.type() == img1.data.type():
+            window = self.window
+        else:
+            window = create_window(self.window_size, channel)
+
+            if img1.is_cuda:
+                window = window.cuda(img1.get_device())
+            window = window.type_as(img1)
+
+            self.window = window
+            self.channel = channel
+
+        return 1 - _ssim(img1, img2, window, self.window_size, channel, self.size_average)
+
+
+class TVLoss(nn.Module):
+    def __init__(self, tv_loss_weight=1):
+        super(TVLoss, self).__init__()
+        self.tv_loss_weight = tv_loss_weight
+
+    def forward(self, x):
+        batch_size, _, h_x, w_x = x.size()
+        count_h, count_w = self.tensor_size(x[:, :, 1:, :]), self.tensor_size(x[:, :, :, 1:])
+        h_tv = torch.pow((x[:, :, 1:, :] - x[:, :, :h_x - 1, :]), 2).sum()
+        w_tv = torch.pow((x[:, :, :, 1:] - x[:, :, :, :w_x - 1]), 2).sum()
+        return self.tv_loss_weight * 2 * (h_tv / count_h + w_tv / count_w) / batch_size
+
+    @staticmethod
+    def tensor_size(t):
+        return t.size()[1] * t.size()[2] * t.size()[3]
+
+
+class SRLoss(nn.Module):
+    def __init__(self):
+        super(SRLoss, self).__init__()
+        vgg = vgg16(pretrained=True)
+        loss_network = nn.Sequential(*list(vgg.features)[:31]).eval()
+        for param in loss_network.parameters():
+            param.requires_grad = False
+        self.loss_network = loss_network
+        self.mse_loss = nn.MSELoss()
+        self.ssim_loss = SSIMLoss()
+        self.tv_loss = TVLoss()
+
+    def forward(self, out_images, target_images):
+        # Perception Loss
+        perception_loss = self.mse_loss(self.loss_network(out_images), self.loss_network(target_images))
+        # Image Loss
+        image_loss = self.mse_loss(out_images, target_images)
+        # SSIM Loss
+        ssim_loss = self.ssim_loss(out_images, target_images)
+        # TV Loss
+        tv_loss = self.tv_loss(out_images)
+        return image_loss + ssim_loss + 0.006 * perception_loss + 2e-8 * tv_loss
