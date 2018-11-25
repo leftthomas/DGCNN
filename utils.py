@@ -156,8 +156,8 @@ class PSNRValueMeter(meter.Meter):
 
     def add(self, sr, hr):
         # make sure compute the PSNR on YCbCr color space and only on Y channel
-        sr = ToTensor()(ToPILImage()(sr).convert('L'))
-        hr = ToTensor()(ToPILImage()(hr).convert('L'))
+        sr = 0.299 * sr[:, 0, :, :] + 0.587 * sr[:, 1, :, :] + 0.114 * sr[:, 2, :, :]
+        hr = 0.299 * hr[:, 0, :, :] + 0.587 * hr[:, 1, :, :] + 0.114 * hr[:, 2, :, :]
         self.sum += 10 * log10(1 / ((sr - hr) ** 2).mean().item())
         self.n += 1
 
@@ -176,9 +176,9 @@ class SSIMValueMeter(meter.Meter):
 
     def add(self, sr, hr):
         # make sure compute the SSIM on YCbCr color space and only on Y channel
-        sr = ToTensor()(ToPILImage()(sr).convert('L'))
-        hr = ToTensor()(ToPILImage()(hr).convert('L'))
-        self.sum += ssim(sr, hr).item()
+        sr = 0.299 * sr[:, 0, :, :] + 0.587 * sr[:, 1, :, :] + 0.114 * sr[:, 2, :, :]
+        hr = 0.299 * hr[:, 0, :, :] + 0.587 * hr[:, 1, :, :] + 0.114 * hr[:, 2, :, :]
+        self.sum += ssim(sr.unsqueeze(1), hr.unsqueeze(1)).item()
         self.n += 1
 
     def value(self):
@@ -187,4 +187,3 @@ class SSIMValueMeter(meter.Meter):
     def reset(self):
         self.n = 0
         self.sum = 0.0
-

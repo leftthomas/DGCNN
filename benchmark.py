@@ -7,7 +7,6 @@ import pandas as pd
 import torch
 import torchvision.utils as utils
 from torch.utils.data import DataLoader
-from torchvision.transforms import ToTensor, ToPILImage
 from tqdm import tqdm
 
 from model import Model
@@ -48,11 +47,11 @@ for image_name, lr_image, hr_restore_img, hr_image in test_bar:
 
     sr_image = model(lr_image)
     # only compute the PSNR and SSIM on YCbCr color space and only on Y channel
-    sr_image_l = ToTensor()(ToPILImage()(sr_image).convert('L'))
-    hr_image_l = ToTensor()(ToPILImage()(hr_image).convert('L'))
+    sr_image_l = 0.299 * sr_image[:, 0, :, :] + 0.587 * sr_image[:, 1, :, :] + 0.114 * sr_image[:, 2, :, :]
+    hr_image_l = 0.299 * hr_image[:, 0, :, :] + 0.587 * hr_image[:, 1, :, :] + 0.114 * hr_image[:, 2, :, :]
     mse = ((sr_image_l - hr_image_l) ** 2).mean().detach().cpu().item()
     psnr_value = 10 * log10(1 / mse)
-    ssim_value = ssim(sr_image_l, hr_image_l).detach().cpu().item()
+    ssim_value = ssim(sr_image_l.unsqueeze(1), hr_image_l.unsqueeze(1)).detach().cpu().item()
 
     image = torch.stack(
         [hr_restore_img.squeeze(0), hr_image.detach().cpu().squeeze(0), sr_image.detach().cpu().squeeze(0)])
