@@ -77,7 +77,7 @@ class TestDatasetFromFolder(Dataset):
         return image_name, lr_image, hr_restore_img, hr_image
 
     def __len__(self):
-        return len(self.lr_filenames)
+        return len(self.image_filenames)
 
 
 def gaussian(window_size, sigma):
@@ -104,10 +104,10 @@ def _ssim(img1, img2, window, window_size, channel, size_average=True):
     sigma2_sq = F.conv2d(img2 * img2, window, padding=window_size // 2, groups=channel) - mu2_sq
     sigma12 = F.conv2d(img1 * img2, window, padding=window_size // 2, groups=channel) - mu1_mu2
 
-    C1 = 0.01 ** 2
-    C2 = 0.03 ** 2
+    c1 = 0.01 ** 2
+    c2 = 0.03 ** 2
 
-    ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / ((mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2))
+    ssim_map = ((2 * mu1_mu2 + c1) * (2 * sigma12 + c2)) / ((mu1_sq + mu2_sq + c1) * (sigma1_sq + sigma2_sq + c2))
 
     if size_average:
         return ssim_map.mean()
