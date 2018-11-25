@@ -27,7 +27,7 @@ if USE_CUDA:
     model, image = model.to('cuda'), image.to('cuda')
     model.load_state_dict(torch.load('epochs/' + MODEL_NAME))
 else:
-    model.load_state_dict(torch.load('epochs/' + MODEL_NAME), map_location='cpu')
+    model.load_state_dict(torch.load('epochs/' + MODEL_NAME, map_location='cpu'))
 
 print('generating super resolution image...')
 start = time.clock()

@@ -33,7 +33,7 @@ if USE_CUDA:
     model = model.to('cuda')
     model.load_state_dict(torch.load('epochs/' + MODEL_NAME))
 else:
-    model.load_state_dict(torch.load('epochs/' + MODEL_NAME), map_location='cpu')
+    model.load_state_dict(torch.load('epochs/' + MODEL_NAME, map_location='cpu'))
 
 out_path = 'results/SRF_' + str(UPSCALE_FACTOR) + '/'
 if not os.path.exists(out_path):
