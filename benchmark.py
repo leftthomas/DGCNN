@@ -22,8 +22,8 @@ UPSCALE_FACTOR = opt.upscale_factor
 MODEL_NAME = opt.model_name
 TEST_PATH = opt.test_path
 
-dataset_names = ['Set5', 'Set14', 'BSD100', 'Urban100', 'Manga109']
-results = {'Set5': {'psnr': [], 'ssim': []}, 'Set14': {'psnr': [], 'ssim': []}, 'BSD100': {'psnr': [], 'ssim': []},
+dataset_names = ['Set5', 'Set14', 'BSDS100', 'Urban100', 'Manga109']
+results = {'Set5': {'psnr': [], 'ssim': []}, 'Set14': {'psnr': [], 'ssim': []}, 'BSDS100': {'psnr': [], 'ssim': []},
            'Urban100': {'psnr': [], 'ssim': []}, 'Manga109': {'psnr': [], 'ssim': []}}
 
 model = Model(UPSCALE_FACTOR).eval()

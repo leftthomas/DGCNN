@@ -27,7 +27,7 @@ rename the directory name to `val`.
 
 ### Test Dataset
 The test dataset are from [LapSRN](http://vllab.ucmerced.edu/wlai24/LapSRN/). It contains **Set 5**, **Set 14**, 
-**BSD 100**, **Urban 100** and **Manga 109** datasets. Download the test dataset from 
+**BSDS 100**, **Urban 100** and **Manga 109** datasets. Download the test dataset from 
 [here](http://vllab.ucmerced.edu/wlai24/LapSRN/results/SR_testing_datasets.zip), and extract it into `data` directory, 
 then rename the directory name to `test`. 
 
