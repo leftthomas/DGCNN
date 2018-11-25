@@ -26,13 +26,10 @@ rename the directory name to `train`, extract the `DIV2K_valid_HR` directory int
 rename the directory name to `val`. 
 
 ### Test Dataset
-The test dataset are from 
-| **Set 5** |  [Bevilacqua et al. BMVC 2012](http://people.rennes.inria.fr/Aline.Roumy/results/SR_BMVC12.html)
-| **Set 14** |  [Zeyde et al. LNCS 2010](https://sites.google.com/site/romanzeyde/research-interests)
-| **BSD 100** | [Martin et al. ICCV 2001](https://www.eecs.berkeley.edu/Research/Projects/CS/vision/bsds/)
-| **Urban 100** | [Huang et al. CVPR 2015](https://sites.google.com/site/jbhuang0604/publications/struct_sr).
-Download the test dataset from [BaiduYun](https://pan.baidu.com/s/1S9w3FAbncE-OTQxnb5MtIg) or 
-[GoogleDrive](https://drive.google.com/open?id=1jvls4Z0cj470HMUQcNi5rSC4NdggGqHP), and then extract it into `data` directory.
+The test dataset are from [LapSRN](http://vllab.ucmerced.edu/wlai24/LapSRN/). It contains **Set 5**, **Set 14**, 
+**BSD 100**, **Urban 100** and **Manga 109** datasets. Download the test dataset from 
+[here](http://vllab.ucmerced.edu/wlai24/LapSRN/results/SR_testing_datasets.zip), and extract it into `data` directory, 
+then rename the directory name to `test`. 
 
 ## Usage
 

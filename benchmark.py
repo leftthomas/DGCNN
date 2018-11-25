@@ -22,8 +22,9 @@ UPSCALE_FACTOR = opt.upscale_factor
 MODEL_NAME = opt.model_name
 TEST_PATH = opt.test_path
 
+dataset_names = ['Set5', 'Set14', 'BSD100', 'Urban100', 'Manga109']
 results = {'Set5': {'psnr': [], 'ssim': []}, 'Set14': {'psnr': [], 'ssim': []}, 'BSD100': {'psnr': [], 'ssim': []},
-           'Urban100': {'psnr': [], 'ssim': []}}
+           'Urban100': {'psnr': [], 'ssim': []}, 'Manga109': {'psnr': [], 'ssim': []}}
 
 model = Model(UPSCALE_FACTOR).eval()
 if torch.cuda.is_available():
@@ -32,35 +33,41 @@ if torch.cuda.is_available():
 else:
     model.load_state_dict(torch.load('epochs/' + MODEL_NAME), map_location='cpu')
 
-test_set = TestDatasetFromFolder(TEST_PATH, upscale_factor=UPSCALE_FACTOR)
-test_loader = DataLoader(dataset=test_set, num_workers=4, batch_size=1, shuffle=False)
-test_bar = tqdm(test_loader, desc='[testing benchmark datasets]')
-
 out_path = 'results/SRF_' + str(UPSCALE_FACTOR) + '/'
 if not os.path.exists(out_path):
     os.makedirs(out_path)
 
-for image_name, lr_image, hr_restore_img, hr_image in test_bar:
-    image_name = image_name[0]
-    if torch.cuda.is_available():
-        lr_image, hr_image = lr_image.to('cuda'), hr_image.to('cuda')
+for dataset_name in dataset_names:
 
-    sr_image = model(lr_image)
-    # only compute the PSNR and SSIM on YCbCr color space and only on Y channel
-    sr_image_l = 0.299 * sr_image[:, 0, :, :] + 0.587 * sr_image[:, 1, :, :] + 0.114 * sr_image[:, 2, :, :]
-    hr_image_l = 0.299 * hr_image[:, 0, :, :] + 0.587 * hr_image[:, 1, :, :] + 0.114 * hr_image[:, 2, :, :]
-    mse = ((sr_image_l - hr_image_l) ** 2).mean().detach().cpu().item()
-    psnr_value = 10 * log10(1 / mse)
-    ssim_value = ssim(sr_image_l.unsqueeze(1), hr_image_l.unsqueeze(1)).detach().cpu().item()
+    saved_path = out_path + '/' + dataset_name
+    if not os.path.exists(saved_path):
+        os.makedirs(saved_path)
 
-    image = torch.stack(
-        [hr_restore_img.squeeze(0), hr_image.detach().cpu().squeeze(0), sr_image.detach().cpu().squeeze(0)])
-    utils.save_image(image, out_path + image_name.split('.')[0] + '_psnr_%.4f_ssim_%.4f.' % (psnr_value, ssim_value) +
-                     image_name.split('.')[-1], nrow=3, padding=5, pad_value=255)
+    test_set = TestDatasetFromFolder(TEST_PATH + '/' + dataset_name, upscale_factor=UPSCALE_FACTOR)
+    test_loader = DataLoader(dataset=test_set, num_workers=4, batch_size=1, shuffle=False)
+    test_bar = tqdm(test_loader, desc='[testing %s benchmark dataset]' % dataset_name)
 
-    # save psnr\ssim
-    results[image_name.split('_')[0]]['psnr'].append(psnr_value)
-    results[image_name.split('_')[0]]['ssim'].append(ssim_value)
+    for image_name, lr_image, hr_restore_img, hr_image in test_bar:
+        image_name = image_name[0]
+        if torch.cuda.is_available():
+            lr_image, hr_image = lr_image.to('cuda'), hr_image.to('cuda')
+
+        sr_image = model(lr_image)
+        # only compute the PSNR and SSIM on YCbCr color space and only on Y channel
+        sr_image_l = 0.299 * sr_image[:, 0, :, :] + 0.587 * sr_image[:, 1, :, :] + 0.114 * sr_image[:, 2, :, :]
+        hr_image_l = 0.299 * hr_image[:, 0, :, :] + 0.587 * hr_image[:, 1, :, :] + 0.114 * hr_image[:, 2, :, :]
+        mse = ((sr_image_l - hr_image_l) ** 2).mean().detach().cpu().item()
+        psnr_value = 10 * log10(1 / mse)
+        ssim_value = ssim(sr_image_l.unsqueeze(1), hr_image_l.unsqueeze(1)).detach().cpu().item()
+
+        image = torch.stack([hr_restore_img.squeeze(0), hr_image.detach().cpu().squeeze(0), sr_image.detach()
+                            .cpu().squeeze(0)])
+        utils.save_image(image, saved_path + image_name.split('.')[0] + '_psnr_%.4f_ssim_%.4f.' %
+                         (psnr_value, ssim_value) + image_name.split('.')[-1], nrow=3, padding=5, pad_value=255)
+
+        # save psnr\ssim
+        results[dataset_name]['psnr'].append(psnr_value)
+        results[dataset_name]['ssim'].append(ssim_value)
 
 out_path = 'statistics/'
 saved_results = {'psnr': [], 'ssim': []}

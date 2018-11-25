@@ -56,19 +56,20 @@ class TrainValDatasetFromFolder(Dataset):
 class TestDatasetFromFolder(Dataset):
     def __init__(self, dataset_dir, upscale_factor):
         super(TestDatasetFromFolder, self).__init__()
-        self.lr_path = dataset_dir + '/SRF_' + str(upscale_factor) + '/data/'
-        self.hr_path = dataset_dir + '/SRF_' + str(upscale_factor) + '/target/'
+        self.image_filenames = [join(dataset_dir, x) for x in os.listdir(dataset_dir) if is_image_file(x)]
         self.upscale_factor = upscale_factor
-        self.lr_filenames = [join(self.lr_path, x) for x in os.listdir(self.lr_path) if is_image_file(x)]
-        self.hr_filenames = [join(self.hr_path, x) for x in os.listdir(self.hr_path) if is_image_file(x)]
 
     def __getitem__(self, index):
-        image_name = self.lr_filenames[index].split('/')[-1]
-        lr_image = Image.open(self.lr_filenames[index]).convert('RGB')
-        w, h = lr_image.size
-        hr_image = Image.open(self.hr_filenames[index]).convert('RGB')
-        hr_scale = Resize((self.upscale_factor * h, self.upscale_factor * w), interpolation=Image.BICUBIC)
-        hr_restore_img = hr_scale(lr_image)
+        image_name = self.image_filenames[index].split('/')[-1]
+        hr_image = Image.open(self.image_filenames[index]).convert('RGB')
+        w_valid = calculate_valid_crop_size(hr_image.size[0], self.upscale_factor)
+        h_valid = calculate_valid_crop_size(hr_image.size[1], self.upscale_factor)
+        hr_scale = CenterCrop((h_valid, w_valid))
+        hr_image = hr_scale(hr_image)
+        lr_scale = Resize((h_valid // self.upscale_factor, w_valid // self.upscale_factor), interpolation=Image.BICUBIC)
+        lr_image = lr_scale(hr_image)
+        hr_restore_scale = Resize((h_valid, w_valid), interpolation=Image.BICUBIC)
+        hr_restore_img = hr_restore_scale(lr_image)
         lr_image, hr_restore_img, hr_image = ToTensor()(lr_image), ToTensor()(hr_restore_img), ToTensor()(hr_image)
 
         return image_name, lr_image, hr_restore_img, hr_image
