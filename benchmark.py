@@ -16,18 +16,20 @@ parser = argparse.ArgumentParser(description='Test Benchmark Datasets')
 parser.add_argument('--upscale_factor', default=4, type=int, choices=[2, 3, 4], help='super resolution upscale factor')
 parser.add_argument('--model_name', default='upscale_4.pth', type=str, help='super resolution model name')
 parser.add_argument('--test_path', default='data/test', type=str, help='test image data path')
+parser.add_argument('--test_mode', default='GPU', type=str, choices=['GPU', 'CPU'], help='using GPU or CPU')
 opt = parser.parse_args()
 
 UPSCALE_FACTOR = opt.upscale_factor
 MODEL_NAME = opt.model_name
 TEST_PATH = opt.test_path
+USE_CUDA = True if opt.test_mode == 'GPU' else False
 
 dataset_names = ['Set5', 'Set14', 'BSDS100', 'Urban100', 'Manga109']
 results = {'Set5': {'psnr': [], 'ssim': []}, 'Set14': {'psnr': [], 'ssim': []}, 'BSDS100': {'psnr': [], 'ssim': []},
            'Urban100': {'psnr': [], 'ssim': []}, 'Manga109': {'psnr': [], 'ssim': []}}
 
 model = Model(UPSCALE_FACTOR).eval()
-if torch.cuda.is_available():
+if USE_CUDA:
     model = model.to('cuda')
     model.load_state_dict(torch.load('epochs/' + MODEL_NAME))
 else:
@@ -49,7 +51,7 @@ for dataset_name in dataset_names:
 
     for image_name, lr_image, hr_restore_img, hr_image in test_bar:
         image_name = image_name[0]
-        if torch.cuda.is_available():
+        if USE_CUDA:
             lr_image, hr_image = lr_image.to('cuda'), hr_image.to('cuda')
 
         sr_image = model(lr_image)

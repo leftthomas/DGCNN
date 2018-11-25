@@ -42,8 +42,8 @@ optional arguments:
 --upscale_factor              super resolution upscale factor [default value is 4](choices:[2, 3, 4])
 --batch_size                  train batch size [default value is 8]
 --num_epochs                  train epoch number [default value is 100]
---train_path                  train image data path [default value is data/train]
---val_path                    val image data path [default value is data/val]
+--train_path                  train image data path [default value is 'data/train']
+--val_path                    val image data path [default value is 'data/val']
 ```
 Visdom now can be accessed by going to `127.0.0.1:8097/env/$upscale_factor` in your browser, 
 `$upscale_factor` means the upscale factor which you are training. If you want to interrupt 
@@ -55,8 +55,9 @@ python benchmark.py
 
 optional arguments:
 --upscale_factor              super resolution upscale factor [default value is 4](choices:[2, 3, 4])
---model_name                  super resolution model name [default value is upscale_4.pth]
---test_path                   test image data path [default value is data/test]
+--model_name                  super resolution model name [default value is 'upscale_4.pth']
+--test_path                   test image data path [default value is 'data/test']
+--test_mode                   using GPU or CPU [default value is GPU](choices:['GPU', 'CPU'])
 ```
 The output super resolution images are on `results` directory, and statistics on `statistics` directory.
 
@@ -67,6 +68,7 @@ python single_image.py
 optional arguments:
 --upscale_factor              super resolution upscale factor [default value is 4](choices:[2, 3, 4])
 --image_name                  test low resolution image name
---model_name                  super resolution model name [default value is upscale_4.pth]
+--model_name                  super resolution model name [default value is 'upscale_4.pth']
+--test_mode                   using GPU or CPU [default value is GPU](choices:['GPU', 'CPU'])
 ```
 Put the image on the same directory as `README.md`, the output super resolution image is on the same directory.
