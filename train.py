@@ -119,6 +119,7 @@ if __name__ == '__main__':
     loss_criterion = SRLoss()
     if torch.cuda.is_available():
         model = model.to('cuda')
+        loss_criterion = loss_criterion.to('cuda')
     print("# parameters:", sum(param.numel() for param in model.parameters()))
 
     optimizer = Adam(model.parameters())
