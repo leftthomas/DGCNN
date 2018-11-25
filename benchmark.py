@@ -65,14 +65,8 @@ for image_name, lr_image, hr_restore_img, hr_image in test_bar:
 out_path = 'statistics/'
 saved_results = {'psnr': [], 'ssim': []}
 for item in results.values():
-    psnr_value = np.array(item['psnr'])
-    ssim_value = np.array(item['ssim'])
-    if (len(psnr_value) == 0) or (len(ssim_value) == 0):
-        psnr_value = 'No data'
-        ssim_value = 'No data'
-    else:
-        psnr_value = psnr_value.mean()
-        ssim = ssim_value.mean()
+    psnr_value = np.array(item['psnr']).mean()
+    ssim_value = np.array(item['ssim']).mean()
     saved_results['psnr'].append(psnr_value)
     saved_results['ssim'].append(ssim_value)
 
