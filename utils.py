@@ -26,7 +26,7 @@ def train_hr_transform(crop_size):
 
 
 def val_hr_transform(crop_size):
-    return Compose([Resize(crop_size, interpolation=Image.BICUBIC), CenterCrop(crop_size), ToTensor()])
+    return Compose([CenterCrop(crop_size), ToTensor()])
 
 
 def lr_transform(crop_size, upscale_factor):
