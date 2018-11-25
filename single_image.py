@@ -8,8 +8,7 @@ from torchvision.transforms import ToTensor, ToPILImage
 from model import Model
 
 parser = argparse.ArgumentParser(description='Test Single Image')
-parser.add_argument('--upscale_factor', default=4, type=int, choices=[2, 3, 4],
-                    help='super resolution upscale factor')
+parser.add_argument('--upscale_factor', default=4, type=int, choices=[2, 3, 4], help='super resolution upscale factor')
 parser.add_argument('--image_name', type=str, help='test low resolution image name')
 parser.add_argument('--model_name', default='upscale_4.pth', type=str, help='super resolution model name')
 opt = parser.parse_args()
@@ -18,11 +17,8 @@ UPSCALE_FACTOR = opt.upscale_factor
 IMAGE_NAME = opt.image_name
 MODEL_NAME = opt.model_name
 
-image = Image.open(IMAGE_NAME)
+image = Image.open(IMAGE_NAME).convert('RGB')
 image = ToTensor()(image).unsqueeze(0)
-# make sure the gray image to be 3 channel
-if image.size(1) == 1:
-    image = torch.cat((image, image, image), dim=1)
 
 model = Model(UPSCALE_FACTOR).eval()
 if torch.cuda.is_available():

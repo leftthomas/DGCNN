@@ -42,7 +42,7 @@ Download the test dataset from [BaiduYun](https://pan.baidu.com/s/1S9w3FAbncE-OT
 python -m visdom.server -logging_level WARNING & python train.py
 
 optional arguments:
---input_size                  training images input size [default value is 64]
+--input_size                  training images input size [default value is 48]
 --upscale_factor              super resolution upscale factor [default value is 4](choices:[2, 3, 4])
 --batch_size                  train batch size [default value is 8]
 --num_epochs                  train epoch number [default value is 100]

@@ -64,20 +64,12 @@ class TestDatasetFromFolder(Dataset):
 
     def __getitem__(self, index):
         image_name = self.lr_filenames[index].split('/')[-1]
-        lr_image = Image.open(self.lr_filenames[index])
+        lr_image = Image.open(self.lr_filenames[index]).convert('RGB')
         w, h = lr_image.size
-        hr_image = Image.open(self.hr_filenames[index])
+        hr_image = Image.open(self.hr_filenames[index]).convert('RGB')
         hr_scale = Resize((self.upscale_factor * h, self.upscale_factor * w), interpolation=Image.BICUBIC)
         hr_restore_img = hr_scale(lr_image)
         lr_image, hr_restore_img, hr_image = ToTensor()(lr_image), ToTensor()(hr_restore_img), ToTensor()(hr_image)
-
-        # make sure the gray image to be 3 channel
-        if lr_image.size(0) == 1:
-            lr_image = torch.cat((lr_image, lr_image, lr_image), dim=0)
-        if hr_restore_img.size(0) == 1:
-            hr_restore_img = torch.cat((hr_restore_img, hr_restore_img, hr_restore_img), dim=0)
-        if hr_image.size(0) == 1:
-            hr_image = torch.cat((hr_image, hr_image, hr_image), dim=0)
 
         return image_name, lr_image, hr_restore_img, hr_image
 
@@ -163,6 +155,9 @@ class PSNRValueMeter(meter.Meter):
         self.reset()
 
     def add(self, sr, hr):
+        # make sure compute the PSNR on YCbCr color space and only on Y channel
+        sr = ToTensor()(ToPILImage()(sr).convert('L'))
+        hr = ToTensor()(ToPILImage()(hr).convert('L'))
         self.sum += 10 * log10(1 / ((sr - hr) ** 2).mean().item())
         self.n += 1
 
@@ -180,6 +175,9 @@ class SSIMValueMeter(meter.Meter):
         self.reset()
 
     def add(self, sr, hr):
+        # make sure compute the SSIM on YCbCr color space and only on Y channel
+        sr = ToTensor()(ToPILImage()(sr).convert('L'))
+        hr = ToTensor()(ToPILImage()(hr).convert('L'))
         self.sum += ssim(sr, hr).item()
         self.n += 1
 
