@@ -1,7 +1,6 @@
 import math
 
 import torch
-from capsule_layer import CapsuleConvTranspose2d
 from torch import nn
 
 
@@ -59,10 +58,10 @@ class ResidualBlock(nn.Module):
 class UpsampleBlock(nn.Module):
     def __init__(self, in_channels, upscale_factor):
         super(UpsampleBlock, self).__init__()
-        self.conv = CapsuleConvTranspose2d(in_channels, in_channels, kernel_size=3, in_length=8, out_length=8,
-                                           stride=upscale_factor, padding=1, output_padding=upscale_factor - 1,
-                                           similarity='tonimoto')
+        self.conv = nn.ConvTranspose2d(in_channels, in_channels, 3, upscale_factor, 1, upscale_factor - 1)
+        self.prelu = nn.PReLU()
 
     def forward(self, x):
         x = self.conv(x)
+        x = self.prelu(x)
         return x
