@@ -26,7 +26,7 @@ class Model(nn.Module):
         block3 = self.block3(block1 + block2)
         block4 = self.block4(block1 + block2 + block3)
         block5 = self.block5(block1 + block2 + block3 + block4)
-        block6 = self.block7(block5)
+        block6 = self.block6(block5)
 
         return torch.sigmoid(block6)
 
