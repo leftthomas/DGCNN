@@ -14,19 +14,17 @@ class Model(nn.Module):
             upscale_factor = 2
         self.block1 = CapsuleConv2d(3, 64, 3, 1, 16, padding=1, similarity='tonimoto', squash=False)
         self.block2 = ResidualBlock(64)
-        self.block3 = ResidualBlock(64)
-        block4 = [UpsampleBlock(64, upscale_factor) for _ in range(upsample_block_num)]
-        self.block4 = nn.Sequential(*block4)
-        self.block5 = CapsuleConv2d(64, 3, 3, 16, 1, padding=1, similarity='tonimoto', squash=False)
+        block3 = [UpsampleBlock(64, upscale_factor) for _ in range(upsample_block_num)]
+        self.block3 = nn.Sequential(*block3)
+        self.block4 = CapsuleConv2d(64, 3, 3, 16, 1, padding=1, similarity='tonimoto', squash=False)
 
     def forward(self, x):
         block1 = self.block1(x)
         block2 = self.block2(block1)
         block3 = self.block3(block1 + block2)
-        block4 = self.block4(block1 + block2 + block3)
-        block5 = self.block5(block4)
+        block4 = self.block5(block3)
 
-        return torch.sigmoid(block5)
+        return torch.sigmoid(block4)
 
 
 class ResidualBlock(nn.Module):
