@@ -218,6 +218,7 @@ class SRLoss(nn.Module):
             param.requires_grad = False
         self.loss_network = loss_network
         self.mse_loss = nn.MSELoss()
+        self.l1_loss = nn.L1Loss()
         self.ssim_loss = SSIMLoss()
         self.tv_loss = TVLoss()
 
@@ -225,9 +226,9 @@ class SRLoss(nn.Module):
         # Perception Loss
         perception_loss = self.mse_loss(self.loss_network(out_images), self.loss_network(target_images))
         # Image Loss
-        image_loss = self.mse_loss(out_images, target_images)
+        image_loss = self.l1_loss(out_images, target_images)
         # SSIM Loss
         ssim_loss = self.ssim_loss(out_images, target_images)
         # TV Loss
         tv_loss = self.tv_loss(out_images)
-        return image_loss + ssim_loss + 0.006 * perception_loss + 2e-8 * tv_loss
+        return image_loss + ssim_loss + perception_loss + tv_loss
