@@ -41,7 +41,7 @@ if not os.path.exists(out_path):
 
 for dataset_name in dataset_names:
 
-    saved_path = out_path + '/' + dataset_name + '/'
+    saved_path = out_path + dataset_name + '/'
     if not os.path.exists(saved_path):
         # make sure it only save once
         os.removedirs(saved_path)
