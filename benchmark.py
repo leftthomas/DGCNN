@@ -1,5 +1,6 @@
 import argparse
 import os
+import shutil
 from math import log10
 
 import numpy as np
@@ -44,7 +45,7 @@ for dataset_name in dataset_names:
     saved_path = out_path + dataset_name + '/'
     if os.path.exists(saved_path):
         # make sure it only save once
-        os.removedirs(saved_path)
+        shutil.rmtree(saved_path)
     os.makedirs(saved_path)
 
     test_set = TestDatasetFromFolder(TEST_PATH + '/' + dataset_name, upscale_factor=UPSCALE_FACTOR)
