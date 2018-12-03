@@ -18,17 +18,10 @@ pip install git+https://github.com/leftthomas/CapsuleLayer.git@master
 
 ## Datasets
 
-### Train、Val Datasets
-The train and val datasets are from [DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/).
-Download the original datasets from there, and extract the `DIV2K_train_HR` directory into `data` directory, then 
-rename the directory name to `train`, extract the `DIV2K_valid_HR` directory into `data` directory, then 
-rename the directory name to `val`. 
-
-### Test Dataset
-The test dataset are from [LapSRN](http://vllab.ucmerced.edu/wlai24/LapSRN/). It contains **Set 5**, **Set 14**, 
-**BSDS 100**, **Urban 100** and **Manga 109** datasets. Download the test dataset from 
-[here](http://vllab.ucmerced.edu/wlai24/LapSRN/results/SR_testing_datasets.zip), and extract it into `data` directory, 
-then rename the directory name to `test`. 
+The datasets are collected from [perceptual-reflection-removal](https://github.com/ceciliavision/perceptual-reflection-removal)
+and [CEILNet](https://github.com/fqnchina/CEILNet).
+Download the datasets from [BaiduYun](https://pan.baidu.com/s/1PJuEvmFdpuJIZwtNU6NgtQ) 
+or [GoogleDrive](https://drive.google.com/open?id=1abYah24PZKQS8K9G3Xsd_6a8Raptp30a), and extract them into `data` directory.
 
 ## Usage
 
@@ -38,7 +31,6 @@ python -m visdom.server -logging_level WARNING & python train.py
 
 optional arguments:
 --input_size                  training images input size [default value is 48]
---upscale_factor              super resolution upscale factor [default value is 4](choices:[2, 3, 4])
 --batch_size                  train batch size [default value is 8]
 --num_epochs                  train epoch number [default value is 100]
 --train_path                  train image data path [default value is 'data/train']
@@ -53,7 +45,6 @@ this process, just type `ps aux | grep visdom` to find the `PID`, then `kill PID
 python benchmark.py
 
 optional arguments:
---upscale_factor              super resolution upscale factor [default value is 4](choices:[2, 3, 4])
 --model_name                  super resolution model name [default value is 'upscale_4.pth']
 --test_path                   test image data path [default value is 'data/test']
 --test_mode                   using GPU or CPU [default value is GPU](choices:['GPU', 'CPU'])
