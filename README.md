@@ -1,4 +1,4 @@
-# SRCapsNet
+# RRCapsNet
 A PyTorch implementation of Convolutional Capsule Network based on the paper [Convolutional Capsule Network For Single Image Reflection Removal]().
 
 ## Requirements
