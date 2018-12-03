@@ -65,9 +65,8 @@ The output super resolution images are on `results` directory, and statistics on
 python single_image.py
 
 optional arguments:
---upscale_factor              super resolution upscale factor [default value is 4](choices:[2, 3, 4])
---image_name                  test low resolution image name
---model_name                  super resolution model name [default value is 'upscale_4.pth']
+--image_name                  test blended image name
+--model_name                  reflection removal model name [default value is 'model.pth']
 --test_mode                   using GPU or CPU [default value is GPU](choices:['GPU', 'CPU'])
 ```
-Put the image on the same directory as `README.md`, the output super resolution image is on the same directory.
+Put the image on the same directory as `README.md`, the output reflection removed image is on the same directory.

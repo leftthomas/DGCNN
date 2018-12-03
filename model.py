@@ -1,21 +1,15 @@
-import math
-
 import torch
 from capsule_layer import CapsuleConv2d
 from torch import nn
 
 
 class Model(nn.Module):
-    def __init__(self, upscale_factor=2):
+    def __init__(self):
         super(Model, self).__init__()
 
-        upsample_block_num = int(math.log(upscale_factor, 2))
-        if upscale_factor % 2 == 0:
-            upscale_factor = 2
         self.block1 = CapsuleConv2d(3, 64, 3, 1, 16, padding=1, similarity='tonimoto', squash=False)
         self.block2 = ResidualBlock(64)
-        block3 = [UpsampleBlock(64, upscale_factor) for _ in range(upsample_block_num)]
-        self.block3 = nn.Sequential(*block3)
+        self.block3 = ResidualBlock(64)
         self.block4 = CapsuleConv2d(64, 3, 3, 16, 1, padding=1, similarity='tonimoto', squash=False)
 
     def forward(self, x):
@@ -47,14 +41,3 @@ class ResidualBlock(nn.Module):
 
         return x + residual
 
-
-class UpsampleBlock(nn.Module):
-    def __init__(self, in_channels, upscale_factor):
-        super(UpsampleBlock, self).__init__()
-        self.conv = nn.ConvTranspose2d(in_channels, in_channels, 3, upscale_factor, 1, upscale_factor - 1)
-        self.prelu = nn.PReLU()
-
-    def forward(self, x):
-        x = self.conv(x)
-        x = self.prelu(x)
-        return x
