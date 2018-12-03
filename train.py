@@ -10,7 +10,7 @@ from torchnet.logger import VisdomPlotLogger
 from tqdm import tqdm
 
 from model import Model
-from utils import PSNRValueMeter, SSIMValueMeter, TrainValDatasetFromFolder, SRLoss
+from utils import PSNRValueMeter, SSIMValueMeter, TrainDatasetFromFolder, TotalLoss
 
 
 def processor(sample):
@@ -110,13 +110,13 @@ if __name__ == '__main__':
     # record current best val measures
     best_psnr, best_ssim = 0, 0
 
-    train_set = TrainValDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
-    val_set = TrainValDatasetFromFolder(VAL_PATH, crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR, is_train=False)
+    train_set = TrainDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
+    val_set = TrainDatasetFromFolder(VAL_PATH, crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR, is_train=False)
     train_loader = DataLoader(dataset=train_set, num_workers=4, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(dataset=val_set, num_workers=4, batch_size=BATCH_SIZE, shuffle=False)
 
     model = Model(UPSCALE_FACTOR)
-    loss_criterion = SRLoss()
+    loss_criterion = TotalLoss()
     if torch.cuda.is_available():
         model = model.to('cuda')
         loss_criterion = loss_criterion.to('cuda')

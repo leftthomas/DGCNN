@@ -11,40 +11,27 @@ from torch.utils.data.dataset import Dataset
 from torchnet.meter import meter
 from torchvision.models.vgg import vgg16
 from torchvision.transforms import Compose, RandomCrop, ToTensor, ToPILImage, Resize, \
-    RandomHorizontalFlip, RandomVerticalFlip, CenterCrop
+    RandomHorizontalFlip, RandomVerticalFlip
 
 
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in ['.png', '.jpg', '.jpeg', '.PNG', '.JPG', '.JPEG'])
 
 
-# make sure the crop size can be divided by upscale_factor with no remainder
-def calculate_valid_crop_size(crop_size, upscale_factor):
-    return crop_size - (crop_size % upscale_factor)
-
-
-def train_hr_transform(crop_size):
+def hr_transform(crop_size):
     return Compose([RandomCrop(crop_size), RandomHorizontalFlip(), RandomVerticalFlip(), ToTensor()])
 
 
-def val_hr_transform(crop_size):
-    return Compose([CenterCrop(crop_size), ToTensor()])
+def lr_transform(crop_size):
+    return Compose([ToPILImage(), Resize(crop_size, interpolation=Image.BICUBIC), ToTensor()])
 
 
-def lr_transform(crop_size, upscale_factor):
-    return Compose([ToPILImage(), Resize(crop_size // upscale_factor, interpolation=Image.BICUBIC), ToTensor()])
-
-
-class TrainValDatasetFromFolder(Dataset):
-    def __init__(self, dataset_dir, crop_size, upscale_factor, is_train=True):
-        super(TrainValDatasetFromFolder, self).__init__()
+class TrainDatasetFromFolder(Dataset):
+    def __init__(self, dataset_dir, crop_size):
+        super(TrainDatasetFromFolder, self).__init__()
         self.image_filenames = [join(dataset_dir, x) for x in os.listdir(dataset_dir) if is_image_file(x)]
-        crop_size = calculate_valid_crop_size(crop_size, upscale_factor)
-        if is_train:
-            self.hr_transform = train_hr_transform(crop_size)
-        else:
-            self.hr_transform = val_hr_transform(crop_size)
-        self.lr_transform = lr_transform(crop_size, upscale_factor)
+        self.hr_transform = hr_transform(crop_size)
+        self.lr_transform = lr_transform(crop_size)
 
     def __getitem__(self, index):
         hr_image = self.hr_transform(Image.open(self.image_filenames[index]))
@@ -56,28 +43,23 @@ class TrainValDatasetFromFolder(Dataset):
 
 
 class TestDatasetFromFolder(Dataset):
-    def __init__(self, dataset_dir, upscale_factor):
+    def __init__(self, dataset_dir, data_type='real'):
         super(TestDatasetFromFolder, self).__init__()
-        self.image_filenames = [join(dataset_dir, x) for x in os.listdir(dataset_dir) if is_image_file(x)]
-        self.upscale_factor = upscale_factor
+        blended_path = join(dataset_dir, data_type, 'blended')
+        transmission_path = join(dataset_dir, data_type, 'transmission_layer')
+        self.blended_images = [join(blended_path, x) for x in sorted(os.listdir(blended_path)) if is_image_file(x)]
+        self.transmission_images = [join(transmission_path, x) for x in sorted(os.listdir(transmission_path)) if
+                                    is_image_file(x)]
 
     def __getitem__(self, index):
-        image_name = self.image_filenames[index].split('/')[-1]
-        hr_image = Image.open(self.image_filenames[index]).convert('RGB')
-        w_valid = calculate_valid_crop_size(hr_image.size[0], self.upscale_factor)
-        h_valid = calculate_valid_crop_size(hr_image.size[1], self.upscale_factor)
-        hr_scale = CenterCrop((h_valid, w_valid))
-        hr_image = hr_scale(hr_image)
-        lr_scale = Resize((h_valid // self.upscale_factor, w_valid // self.upscale_factor), interpolation=Image.BICUBIC)
-        lr_image = lr_scale(hr_image)
-        hr_restore_scale = Resize((h_valid, w_valid), interpolation=Image.BICUBIC)
-        hr_restore_img = hr_restore_scale(lr_image)
-        lr_image, hr_restore_img, hr_image = ToTensor()(lr_image), ToTensor()(hr_restore_img), ToTensor()(hr_image)
+        image_name = self.blended_images[index].split('/')[-1]
+        blended_image = ToTensor()(Image.open(self.blended_images[index]).convert('RGB'))
+        transmission_image = ToTensor()(Image.open(self.transmission_images[index]).convert('RGB'))
 
-        return image_name, lr_image, hr_restore_img, hr_image
+        return image_name, blended_image, transmission_image
 
     def __len__(self):
-        return len(self.image_filenames)
+        return len(self.blended_images)
 
 
 def gaussian(window_size, sigma):
@@ -131,11 +113,11 @@ class PSNRValueMeter(meter.Meter):
         super(PSNRValueMeter, self).__init__()
         self.reset()
 
-    def add(self, sr, hr):
+    def add(self, img1, img2):
         # make sure compute the PSNR on YCbCr color space and only on Y channel
-        sr = 0.299 * sr[:, 0, :, :] + 0.587 * sr[:, 1, :, :] + 0.114 * sr[:, 2, :, :]
-        hr = 0.299 * hr[:, 0, :, :] + 0.587 * hr[:, 1, :, :] + 0.114 * hr[:, 2, :, :]
-        self.sum += 10 * log10(1 / ((sr - hr) ** 2).mean().item())
+        img1 = 0.299 * img1[:, 0, :, :] + 0.587 * img1[:, 1, :, :] + 0.114 * img1[:, 2, :, :]
+        img2 = 0.299 * img2[:, 0, :, :] + 0.587 * img2[:, 1, :, :] + 0.114 * img2[:, 2, :, :]
+        self.sum += 10 * log10(1 / ((img1 - img2) ** 2).mean().item())
         self.n += 1
 
     def value(self):
@@ -151,11 +133,11 @@ class SSIMValueMeter(meter.Meter):
         super(SSIMValueMeter, self).__init__()
         self.reset()
 
-    def add(self, sr, hr):
+    def add(self, img1, img2):
         # make sure compute the SSIM on YCbCr color space and only on Y channel
-        sr = 0.299 * sr[:, 0, :, :] + 0.587 * sr[:, 1, :, :] + 0.114 * sr[:, 2, :, :]
-        hr = 0.299 * hr[:, 0, :, :] + 0.587 * hr[:, 1, :, :] + 0.114 * hr[:, 2, :, :]
-        self.sum += ssim(sr.unsqueeze(1), hr.unsqueeze(1)).item()
+        img1 = 0.299 * img1[:, 0, :, :] + 0.587 * img1[:, 1, :, :] + 0.114 * img1[:, 2, :, :]
+        img2 = 0.299 * img2[:, 0, :, :] + 0.587 * img2[:, 1, :, :] + 0.114 * img2[:, 2, :, :]
+        self.sum += ssim(img1.unsqueeze(1), img2.unsqueeze(1)).item()
         self.n += 1
 
     def value(self):
@@ -209,9 +191,9 @@ class TVLoss(nn.Module):
         return t.size()[1] * t.size()[2] * t.size()[3]
 
 
-class SRLoss(nn.Module):
+class TotalLoss(nn.Module):
     def __init__(self):
-        super(SRLoss, self).__init__()
+        super(TotalLoss, self).__init__()
         vgg = vgg16(pretrained=True)
         loss_network = nn.Sequential(*list(vgg.features)[:31]).eval()
         for param in loss_network.parameters():
