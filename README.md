@@ -1,6 +1,5 @@
 # SRCapsNet
-A PyTorch implementation of Convolutional Capsule Network for Super-Resolution based on the paper 
-[Convolutional Capsule Network For Single Image Super-resolution](xxx).
+A PyTorch implementation of Convolutional Capsule Network based on the paper [Convolutional Capsule Network For Single Image Reflection Removal]().
 
 ## Requirements
 - [Anaconda](https://www.anaconda.com/download/)
