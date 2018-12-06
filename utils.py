@@ -10,56 +10,15 @@ from torch import nn
 from torch.utils.data.dataset import Dataset
 from torchnet.meter import meter
 from torchvision.models.vgg import vgg16
-from torchvision.transforms import Compose, RandomCrop, ToTensor, ToPILImage, Resize, \
-    RandomHorizontalFlip, RandomVerticalFlip
+from torchvision.transforms import Compose, ToTensor, Resize, CenterCrop
 
 
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in ['.png', '.jpg', '.jpeg', '.PNG', '.JPG', '.JPEG'])
 
 
-def hr_transform(crop_size):
-    return Compose([RandomCrop(crop_size), RandomHorizontalFlip(), RandomVerticalFlip(), ToTensor()])
-
-
-def lr_transform(crop_size):
-    return Compose([ToPILImage(), Resize(crop_size, interpolation=Image.BICUBIC), ToTensor()])
-
-
-class TrainDatasetFromFolder(Dataset):
-    def __init__(self, dataset_dir, crop_size):
-        super(TrainDatasetFromFolder, self).__init__()
-        self.image_filenames = [join(dataset_dir, x) for x in os.listdir(dataset_dir) if is_image_file(x)]
-        self.hr_transform = hr_transform(crop_size)
-        self.lr_transform = lr_transform(crop_size)
-
-    def __getitem__(self, index):
-        hr_image = self.hr_transform(Image.open(self.image_filenames[index]))
-        lr_image = self.lr_transform(hr_image)
-        return lr_image, hr_image
-
-    def __len__(self):
-        return len(self.image_filenames)
-
-
-class TestDatasetFromFolder(Dataset):
-    def __init__(self, dataset_dir, data_type='real'):
-        super(TestDatasetFromFolder, self).__init__()
-        blended_path = join(dataset_dir, data_type, 'blended')
-        transmission_path = join(dataset_dir, data_type, 'transmission_layer')
-        self.blended_images = [join(blended_path, x) for x in sorted(os.listdir(blended_path)) if is_image_file(x)]
-        self.transmission_images = [join(transmission_path, x) for x in sorted(os.listdir(transmission_path)) if
-                                    is_image_file(x)]
-
-    def __getitem__(self, index):
-        image_name = self.blended_images[index].split('/')[-1]
-        blended_image = ToTensor()(Image.open(self.blended_images[index]).convert('RGB'))
-        transmission_image = ToTensor()(Image.open(self.transmission_images[index]).convert('RGB'))
-
-        return image_name, blended_image, transmission_image
-
-    def __len__(self):
-        return len(self.blended_images)
+def image_transform(crop_size):
+    return Compose([Resize(crop_size, interpolation=Image.BICUBIC), CenterCrop(crop_size), ToTensor()])
 
 
 def gaussian(window_size, sigma):
@@ -67,8 +26,8 @@ def gaussian(window_size, sigma):
     return gauss / gauss.sum()
 
 
-def create_window(window_size, channel):
-    _1D_window = gaussian(window_size, 1.5).unsqueeze(1)
+def create_window(window_size, channel, sigma=1.5):
+    _1D_window = gaussian(window_size, sigma).unsqueeze(1)
     _2D_window = _1D_window.mm(_1D_window.t()).float().unsqueeze(0).unsqueeze(0)
     window = _2D_window.expand(channel, 1, window_size, window_size).contiguous()
     return window
@@ -106,6 +65,80 @@ def ssim(img1, img2, window_size=11, size_average=True):
     window = window.type_as(img1)
 
     return _ssim(img1, img2, window, window_size, channel, size_average)
+
+
+def synthetic_image(transmission_image, reflection_image):
+    transmission_image, reflection_image = transmission_image.unsqueeze(0), reflection_image.unsqueeze(0)
+    (_, channel, _, _) = reflection_image.size()
+    window = create_window(11, channel, sigma=torch.uniform(2, 5) / 11)
+    reflection_image = F.conv2d(reflection_image, window, padding=11 // 2, groups=channel)
+    blended_image = transmission_image + reflection_image
+    if blended_image.max() > 1:
+        label_gt1 = torch.gt(blended_image, 1)
+        reflection_image = reflection_image - torch.mean((blended_image - 1)[label_gt1]) * 1.3
+        reflection_image = torch.clamp(reflection_image, 0, 1)
+        blended_image = transmission_image + reflection_image
+        blended_image = torch.clamp(blended_image, 0, 1)
+    return blended_image.squeeze(0)
+
+
+class TrainDatasetFromFolder(Dataset):
+    def __init__(self, dataset_dir, crop_size, data_type='real'):
+        super(TrainDatasetFromFolder, self).__init__()
+        if data_type not in ['real', 'synthetic']:
+            raise NotImplementedError('the data_type must be real or synthetic')
+
+        transmission_path = join(dataset_dir, data_type, 'transmission')
+        self.transmission_images = [join(transmission_path, x) for x in sorted(os.listdir(transmission_path)) if
+                                    is_image_file(x)]
+        if data_type == 'real':
+            blended_path = join(dataset_dir, data_type, 'blended')
+            self.blended_images = [join(blended_path, x) for x in sorted(os.listdir(blended_path)) if is_image_file(x)]
+        else:
+            reflection_path = join(dataset_dir, data_type, 'reflection')
+            self.reflection_images = [join(reflection_path, x) for x in sorted(os.listdir(reflection_path)) if
+                                      is_image_file(x)]
+
+        self.transform = image_transform(crop_size)
+        self.data_type = data_type
+
+    def __getitem__(self, index):
+        transmission_image = self.transform(Image.open(self.transmission_images[index]).convert('RGB'))
+        if self.data_type == 'real':
+            blended_image = self.transform(Image.open(self.blended_images[index]).convert('RGB'))
+        else:
+            # synthetic blended image
+            reflection_image = self.transform(Image.open(self.reflection_images[index]).convert('RGB'))
+            blended_image = synthetic_image(transmission_image, reflection_image)
+
+        return blended_image, transmission_image
+
+    def __len__(self):
+        return len(self.transmission_images)
+
+
+class TestDatasetFromFolder(Dataset):
+    def __init__(self, dataset_dir, crop_size, data_type='real'):
+        super(TestDatasetFromFolder, self).__init__()
+        if data_type not in ['real', 'synthetic']:
+            raise NotImplementedError('the data_type must be real or synthetic')
+
+        blended_path = join(dataset_dir, data_type, 'blended')
+        transmission_path = join(dataset_dir, data_type, 'transmission')
+        self.blended_images = [join(blended_path, x) for x in sorted(os.listdir(blended_path)) if is_image_file(x)]
+        self.transmission_images = [join(transmission_path, x) for x in sorted(os.listdir(transmission_path)) if
+                                    is_image_file(x)]
+        self.transform = image_transform(crop_size)
+
+    def __getitem__(self, index):
+        image_name = self.blended_images[index].split('/')[-1]
+        blended_image = self.transform(Image.open(self.blended_images[index]).convert('RGB'))
+        transmission_image = self.transform(Image.open(self.transmission_images[index]).convert('RGB'))
+
+        return image_name, blended_image, transmission_image
+
+    def __len__(self):
+        return len(self.transmission_images)
 
 
 class PSNRValueMeter(meter.Meter):
