@@ -30,14 +30,13 @@ or [GoogleDrive](https://drive.google.com/open?id=1abYah24PZKQS8K9G3Xsd_6a8Raptp
 python -m visdom.server -logging_level WARNING & python train.py
 
 optional arguments:
---input_size                  training images input size [default value is 48]
+--crop_size                   image crop size [default value is 224]
 --batch_size                  train batch size [default value is 8]
 --num_epochs                  train epoch number [default value is 100]
 --train_path                  train image data path [default value is 'data/train']
---val_path                    val image data path [default value is 'data/val']
+--test_path                   test image data path [default value is 'data/test']
 ```
-Visdom now can be accessed by going to `127.0.0.1:8097/env/$upscale_factor` in your browser, 
-`$upscale_factor` means the upscale factor which you are training. If you want to interrupt 
+Visdom now can be accessed by going to `127.0.0.1:8097/` in your browser. If you want to interrupt 
 this process, just type `ps aux | grep visdom` to find the `PID`, then `kill PID`.
 
 ### Test Benchmark Datasets
