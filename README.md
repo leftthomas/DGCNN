@@ -39,24 +39,15 @@ optional arguments:
 Visdom now can be accessed by going to `127.0.0.1:8097/` in your browser. If you want to interrupt 
 this process, just type `ps aux | grep visdom` to find the `PID`, then `kill PID`.
 
-### Test Benchmark Datasets
-```
-python benchmark.py
-
-optional arguments:
---model_name                  super resolution model name [default value is 'upscale_4.pth']
---test_path                   test image data path [default value is 'data/test']
---test_mode                   using GPU or CPU [default value is GPU](choices:['GPU', 'CPU'])
-```
-The output super resolution images are on `results` directory, and statistics on `statistics` directory.
-
 ### Test Single Image
 ```
-python single_image.py
+python vis.py
 
 optional arguments:
---image_name                  test blended image name
+--blended_name                test blended image name
+--transmission_name           test transmission image name [default value is '']
+--crop_size                   image crop size [default value is 224]
 --model_name                  reflection removal model name [default value is 'model.pth']
---test_mode                   using GPU or CPU [default value is GPU](choices:['GPU', 'CPU'])
+--test_mode                   using GPU or CPU [default value is 'GPU'](choices:['GPU', 'CPU'])
 ```
-Put the image on the same directory as `README.md`, the output reflection removed image is on the same directory.
+The output reflection removed image is on `results` directory.
