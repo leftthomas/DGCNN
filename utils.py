@@ -1,4 +1,5 @@
 import os
+import random
 from math import exp
 from math import log10
 from os.path import join
@@ -70,7 +71,7 @@ def ssim(img1, img2, window_size=11, size_average=True):
 def synthetic_image(transmission_image, reflection_image):
     transmission_image, reflection_image = transmission_image.unsqueeze(0), reflection_image.unsqueeze(0)
     (_, channel, _, _) = reflection_image.size()
-    window = create_window(11, channel, sigma=torch.uniform(2, 5) / 11)
+    window = create_window(11, channel, sigma=random.uniform(2, 5) / 11)
     reflection_image = F.conv2d(reflection_image, window, padding=11 // 2, groups=channel)
     blended_image = transmission_image + reflection_image
     if blended_image.max() > 1:
