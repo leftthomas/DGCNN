@@ -131,11 +131,10 @@ class TestDatasetFromFolder(Dataset):
         self.transform = image_transform(crop_size)
 
     def __getitem__(self, index):
-        image_name = self.blended_images[index].split('/')[-1]
         blended_image = self.transform(Image.open(self.blended_images[index]).convert('RGB'))
         transmission_image = self.transform(Image.open(self.transmission_images[index]).convert('RGB'))
 
-        return image_name, blended_image, transmission_image
+        return blended_image, transmission_image
 
     def __len__(self):
         return len(self.transmission_images)
