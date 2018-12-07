@@ -224,6 +224,24 @@ class TVLoss(nn.Module):
         return t.size()[1] * t.size()[2] * t.size()[3]
 
 
+def compute_gradient(img):
+    grad_x = img[:, :, 1:, :] - img[:, :, :-1, :]
+    grad_y = img[:, :, :, 1:] - img[:, :, :, :-1]
+    return grad_x, grad_y
+
+
+class GradientLoss(nn.Module):
+    def __init__(self):
+        super(GradientLoss, self).__init__()
+
+    def forward(self, img1, img2):
+        grad_x1, grad_y1 = compute_gradient(img1)
+        grad_x2, grad_y2 = compute_gradient(img2)
+        grad_x_loss = F.l1_loss(grad_x1, grad_x2)
+        grad_y_loss = F.l1_loss(grad_y1, grad_y2)
+        return grad_x_loss + grad_y_loss
+
+
 class TotalLoss(nn.Module):
     def __init__(self):
         super(TotalLoss, self).__init__()
@@ -236,6 +254,7 @@ class TotalLoss(nn.Module):
         self.l1_loss = nn.L1Loss()
         self.ssim_loss = SSIMLoss()
         self.tv_loss = TVLoss()
+        self.gradient_loss = GradientLoss()
 
     def forward(self, out_images, target_images):
         # Perception Loss
@@ -246,4 +265,6 @@ class TotalLoss(nn.Module):
         ssim_loss = self.ssim_loss(out_images, target_images)
         # TV Loss
         tv_loss = self.tv_loss(out_images)
-        return image_loss + ssim_loss + perception_loss + tv_loss
+        # Gradient Loss
+        gradient_loss = self.gradient_loss(out_images, target_images)
+        return image_loss + ssim_loss + perception_loss + tv_loss + gradient_loss
