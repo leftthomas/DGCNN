@@ -4,7 +4,7 @@ import pandas as pd
 import torch
 import torchnet as tnt
 from torch.optim import Adam
-from torch.utils.data import DataLoader, ConcatDataset
+from torch.utils.data import DataLoader
 from torchnet.engine import Engine
 from torchnet.logger import VisdomPlotLogger
 from tqdm import tqdm
@@ -14,16 +14,16 @@ from utils import PSNRValueMeter, SSIMValueMeter, TrainDatasetFromFolder, TotalL
 
 
 def processor(sample):
-    data, labels, training = sample
+    blended, transmission, reflection, training = sample
 
     if torch.cuda.is_available():
-        data, labels = data.to('cuda'), labels.to('cuda')
+        blended, transmission, reflection = blended.to('cuda'), transmission.to('cuda'), reflection.to('cuda')
 
     model.train(training)
 
-    classes = model(data)
-    loss = loss_criterion(classes, labels)
-    return loss, classes
+    transmission_0, reflection_predicted, transmission_1 = model(blended)
+    loss = loss_criterion(transmission_0, reflection_predicted, transmission_1, transmission, reflection)
+    return loss, transmission_1
 
 
 def on_sample(state):
@@ -127,9 +127,7 @@ if __name__ == '__main__':
     # record current best measures
     best_psnr, best_ssim = 0, 0
 
-    real_dataset = TrainDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE, data_type='real')
-    synthetic_dataset = TrainDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE, data_type='synthetic')
-    train_set = ConcatDataset([real_dataset, synthetic_dataset])
+    train_set = TrainDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE)
     test_real_set = TestDatasetFromFolder(TEST_PATH, crop_size=CROP_SIZE, data_type='real')
     test_synthetic_set = TestDatasetFromFolder(TEST_PATH, crop_size=CROP_SIZE, data_type='synthetic')
     train_loader = DataLoader(dataset=train_set, num_workers=4, batch_size=BATCH_SIZE, shuffle=True)

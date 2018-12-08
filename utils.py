@@ -84,35 +84,24 @@ def synthetic_image(transmission_image, reflection_image):
 
 
 class TrainDatasetFromFolder(Dataset):
-    def __init__(self, dataset_dir, crop_size, data_type='real'):
+    def __init__(self, dataset_dir, crop_size):
         super(TrainDatasetFromFolder, self).__init__()
-        if data_type not in ['real', 'synthetic']:
-            raise NotImplementedError('the data_type must be real or synthetic')
-
-        transmission_path = join(dataset_dir, data_type, 'transmission')
+        transmission_path = join(dataset_dir, 'transmission')
         self.transmission_images = [join(transmission_path, x) for x in sorted(os.listdir(transmission_path)) if
                                     is_image_file(x)]
-        if data_type == 'real':
-            blended_path = join(dataset_dir, data_type, 'blended')
-            self.blended_images = [join(blended_path, x) for x in sorted(os.listdir(blended_path)) if is_image_file(x)]
-        else:
-            reflection_path = join(dataset_dir, data_type, 'reflection')
-            self.reflection_images = [join(reflection_path, x) for x in sorted(os.listdir(reflection_path)) if
-                                      is_image_file(x)]
+        reflection_path = join(dataset_dir, 'reflection')
+        self.reflection_images = [join(reflection_path, x) for x in sorted(os.listdir(reflection_path)) if
+                                  is_image_file(x)]
 
         self.transform = image_transform(crop_size)
-        self.data_type = data_type
 
     def __getitem__(self, index):
         transmission_image = self.transform(Image.open(self.transmission_images[index]).convert('RGB'))
-        if self.data_type == 'real':
-            blended_image = self.transform(Image.open(self.blended_images[index]).convert('RGB'))
-        else:
-            # synthetic blended image
-            reflection_image = self.transform(Image.open(self.reflection_images[index]).convert('RGB'))
-            blended_image = synthetic_image(transmission_image, reflection_image)
+        reflection_image = self.transform(Image.open(self.reflection_images[index]).convert('RGB'))
+        # synthetic blended image
+        blended_image = synthetic_image(transmission_image, reflection_image)
 
-        return blended_image, transmission_image
+        return blended_image, transmission_image, reflection_image
 
     def __len__(self):
         return len(self.transmission_images)
@@ -135,7 +124,7 @@ class TestDatasetFromFolder(Dataset):
         blended_image = self.transform(Image.open(self.blended_images[index]).convert('RGB'))
         transmission_image = self.transform(Image.open(self.transmission_images[index]).convert('RGB'))
 
-        return blended_image, transmission_image
+        return blended_image, transmission_image, None
 
     def __len__(self):
         return len(self.transmission_images)

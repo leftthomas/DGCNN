@@ -56,7 +56,7 @@ else:
     saved_image_name = BLENDED_NAME
 with torch.no_grad():
     start = time.clock()
-    out = model(blended_image)
+    _, __, out = model(blended_image)
     elapsed = (time.clock() - start)
     print('cost %.4f ' % elapsed + 's')
     if transmission_image is not None:
