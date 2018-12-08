@@ -1,108 +1,97 @@
 import torch
-import torch.nn.functional as F
 from torch import nn
+
+
+class InConv(nn.Module):
+    def __init__(self, in_ch, out_ch):
+        super(InConv, self).__init__()
+        self.conv = nn.Conv2d(in_ch, out_ch, 3, padding=1)
+        self.relu = nn.LeakyReLU(negative_slope=0.2)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.relu(x)
+        return x
+
+
+class DownConv(nn.Module):
+    def __init__(self, in_ch, out_ch):
+        super(DownConv, self).__init__()
+        self.conv = nn.Conv2d(in_ch, out_ch, 3, stride=2, padding=1)
+        self.bn = nn.BatchNorm2d(out_ch)
+        self.relu = nn.LeakyReLU(negative_slope=0.2)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.relu(x)
+        return x
+
+
+class UpConv(nn.Module):
+    def __init__(self, in_ch, out_ch):
+        super(UpConv, self).__init__()
+        self.conv = nn.ConvTranspose2d(in_ch, out_ch, 3, stride=2, padding=1, output_padding=1)
+        self.bn = nn.BatchNorm2d(out_ch)
+        self.relu = nn.LeakyReLU(negative_slope=0.2)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.relu(x)
+        return x
+
+
+class OutConv(nn.Module):
+    def __init__(self, in_ch, out_ch):
+        super(OutConv, self).__init__()
+        self.conv = nn.Conv2d(in_ch, out_ch, 3, padding=1)
+        self.tanh = nn.Tanh()
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.tanh(x)
+        return (x + 1) / 2
+
+
+class BasicModel(nn.Module):
+    def __init__(self, in_ch, out_ch):
+        super(BasicModel, self).__init__()
+
+        self.inc = InConv(in_ch, 64)
+        self.down1 = DownConv(64, 128)
+        self.down2 = DownConv(128, 256)
+        self.down3 = DownConv(256, 512)
+        self.down4 = DownConv(512, 512)
+        self.up4 = UpConv(512, 512)
+        self.up3 = UpConv(512, 256)
+        self.up2 = UpConv(256, 128)
+        self.up1 = UpConv(128, 64)
+        self.outc = OutConv(64, out_ch)
+
+    def forward(self, x):
+        x = self.inc(x)
+        x = self.down1(x)
+        x = self.down2(x)
+        x = self.down3(x)
+        x = self.down4(x)
+        x = self.up4(x)
+        x = self.up3(x)
+        x = self.up2(x)
+        x = self.up1(x)
+        x = self.outc(x)
+        return x
 
 
 class Model(nn.Module):
     def __init__(self):
         super(Model, self).__init__()
-
-        self.inc = inconv(3, 64)
-        self.down1 = down(64, 128)
-        self.down2 = down(128, 256)
-        self.down3 = down(256, 512)
-        self.down4 = down(512, 512)
-        self.up1 = up(1024, 256)
-        self.up2 = up(512, 128)
-        self.up3 = up(256, 64)
-        self.up4 = up(128, 64)
-        self.outc = outconv(64, 3)
+        self.g_0 = BasicModel(3, 3)
+        self.h = BasicModel(6, 3)
+        self.g_1 = BasicModel(6, 3)
 
     def forward(self, x):
-        x1 = self.inc(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        x4 = self.down3(x3)
-        x5 = self.down4(x4)
-        x = self.up1(x5, x4)
-        x = self.up2(x, x3)
-        x = self.up3(x, x2)
-        x = self.up4(x, x1)
-        x = self.outc(x)
-        return torch.sigmoid(x)
-
-
-class double_conv(nn.Module):
-    '''(conv => BN => ReLU) * 2'''
-
-    def __init__(self, in_ch, out_ch):
-        super(double_conv, self).__init__()
-        self.conv = nn.Sequential(
-            nn.Conv2d(in_ch, out_ch, 3, padding=1),
-            nn.BatchNorm2d(out_ch),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(out_ch, out_ch, 3, padding=1),
-            nn.BatchNorm2d(out_ch),
-            nn.ReLU(inplace=True)
-        )
-
-    def forward(self, x):
-        x = self.conv(x)
-        return x
-
-
-class inconv(nn.Module):
-    def __init__(self, in_ch, out_ch):
-        super(inconv, self).__init__()
-        self.conv = double_conv(in_ch, out_ch)
-
-    def forward(self, x):
-        x = self.conv(x)
-        return x
-
-
-class down(nn.Module):
-    def __init__(self, in_ch, out_ch):
-        super(down, self).__init__()
-        self.mpconv = nn.Sequential(
-            nn.MaxPool2d(2),
-            double_conv(in_ch, out_ch)
-        )
-
-    def forward(self, x):
-        x = self.mpconv(x)
-        return x
-
-
-class up(nn.Module):
-    def __init__(self, in_ch, out_ch, bilinear=True):
-        super(up, self).__init__()
-        if bilinear:
-            self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-        else:
-            self.up = nn.ConvTranspose2d(in_ch // 2, in_ch // 2, 2, stride=2)
-
-        self.conv = double_conv(in_ch, out_ch)
-
-    def forward(self, x1, x2):
-        x1 = self.up(x1)
-
-        # input is CHW
-        diffY = x2.size()[2] - x1.size()[2]
-        diffX = x2.size()[3] - x1.size()[3]
-
-        x1 = F.pad(x1, (diffX // 2, diffX - diffX // 2,
-                        diffY // 2, diffY - diffY // 2))
-        x = torch.cat([x2, x1], dim=1)
-        x = self.conv(x)
-        return x
-
-
-class outconv(nn.Module):
-    def __init__(self, in_ch, out_ch):
-        super(outconv, self).__init__()
-        self.conv = nn.Conv2d(in_ch, out_ch, 1)
-
-    def forward(self, x):
-        x = self.conv(x)
-        return x
+        b_0 = self.g_0(x)
+        r = self.h(torch.cat((b_0, x), dim=1))
+        b_1 = self.g_1(torch.cat((r, x), dim=1))
+        return b_0, r, b_1
