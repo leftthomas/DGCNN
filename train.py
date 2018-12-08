@@ -14,15 +14,15 @@ from utils import PSNRValueMeter, SSIMValueMeter, TrainDatasetFromFolder, TotalL
 
 
 def processor(sample):
-    blended, transmission, reflection, training = sample
+    blended, transmission, training = sample
 
     if torch.cuda.is_available():
-        blended, transmission, reflection = blended.to('cuda'), transmission.to('cuda'), reflection.to('cuda')
+        blended, transmission = blended.to('cuda'), transmission.to('cuda')
 
     model.train(training)
 
     transmission_0, reflection_predicted, transmission_1 = model(blended)
-    loss = loss_criterion(transmission_0, reflection_predicted, transmission_1, transmission, reflection)
+    loss = loss_criterion(transmission_0, reflection_predicted, transmission_1, transmission)
     return loss, transmission_1
 
 

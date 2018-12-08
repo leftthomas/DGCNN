@@ -101,7 +101,7 @@ class TrainDatasetFromFolder(Dataset):
         # synthetic blended image
         blended_image = synthetic_image(transmission_image, reflection_image)
 
-        return blended_image, transmission_image, reflection_image
+        return blended_image, transmission_image
 
     def __len__(self):
         return len(self.transmission_images)
@@ -123,8 +123,7 @@ class TestDatasetFromFolder(Dataset):
     def __getitem__(self, index):
         blended_image = self.transform(Image.open(self.blended_images[index]).convert('RGB'))
         transmission_image = self.transform(Image.open(self.transmission_images[index]).convert('RGB'))
-        # because on test mode, there are no ground truth reflection_image
-        return blended_image, transmission_image, None
+        return blended_image, transmission_image
 
     def __len__(self):
         return len(self.transmission_images)
@@ -231,6 +230,40 @@ class GradientLoss(nn.Module):
         return grad_x_loss + grad_y_loss
 
 
+class ExclusionLoss(nn.Module):
+    def __init__(self, level=3):
+        super(ExclusionLoss, self).__init__()
+        self.level = level
+
+    def forward(self, img1, img2):
+        grad_loss = []
+        for l in range(self.level):
+            grad_x1, grad_y1 = compute_gradient(img1)
+            grad_x2, grad_y2 = compute_gradient(img2)
+            grad_x1_norm = torch.sum(torch.abs(grad_x1) ** 2, dim=[2, 3], keepdim=True) ** 0.5
+            grad_y1_norm = torch.sum(torch.abs(grad_y1) ** 2, dim=[2, 3], keepdim=True) ** 0.5
+            grad_x2_norm = torch.sum(torch.abs(grad_x2) ** 2, dim=[2, 3], keepdim=True) ** 0.5
+            grad_y2_norm = torch.sum(torch.abs(grad_y2) ** 2, dim=[2, 3], keepdim=True) ** 0.5
+            lamda_x1 = (grad_x2_norm / grad_x1_norm) ** 0.5
+            lamda_y1 = (grad_y2_norm / grad_y1_norm) ** 0.5
+            lamda_x2 = (grad_x1_norm / grad_x2_norm) ** 0.5
+            lamda_y2 = (grad_y1_norm / grad_y2_norm) ** 0.5
+
+            grad_x1_s = torch.tanh(lamda_x1 * torch.abs(grad_x1))
+            grad_y1_s = torch.tanh(lamda_y1 * torch.abs(grad_y1))
+            grad_x2_s = torch.tanh(lamda_x2 * torch.abs(grad_x2))
+            grad_y2_s = torch.tanh(lamda_y2 * torch.abs(grad_y2))
+
+            grad_x_loss = torch.sum(torch.abs(grad_x1_s * grad_x2_s) ** 2, dim=[2, 3]) ** 0.5
+            grad_y_loss = torch.sum(torch.abs(grad_y1_s * grad_y2_s) ** 2, dim=[2, 3]) ** 0.5
+
+            grad_loss.append(torch.mean(grad_x_loss) + torch.mean(grad_y_loss))
+            img1 = F.interpolate(img1, scale_factor=2, mode='bilinear')
+            img2 = F.interpolate(img2, scale_factor=2, mode='bilinear')
+
+        return torch.stack(grad_loss).mean()
+
+
 class TotalLoss(nn.Module):
     def __init__(self):
         super(TotalLoss, self).__init__()
@@ -244,8 +277,9 @@ class TotalLoss(nn.Module):
         self.ssim_loss = SSIMLoss()
         self.tv_loss = TVLoss()
         self.gradient_loss = GradientLoss()
+        self.exclusion_loss = ExclusionLoss()
 
-    def forward(self, transmission_0, reflection_predicted, transmission_1, transmission, reflection):
+    def forward(self, transmission_0, reflection_predicted, transmission_1, transmission):
         # Image Loss
         transmission_0_image_loss = self.l1_loss(transmission_0, transmission)
         transmission_1_image_loss = self.l1_loss(transmission_1, transmission)
@@ -263,18 +297,10 @@ class TotalLoss(nn.Module):
         # Gradient Loss
         transmission_0_gradient_loss = self.gradient_loss(transmission_0, transmission)
         transmission_1_gradient_loss = self.gradient_loss(transmission_1, transmission)
-        if reflection is None:
-            reflection_image_loss, reflection_perception_loss, reflection_ssim_loss, \
-            reflection_tv_loss, reflection_gradient_loss = 0, 0, 0, 0, 0
-        else:
-            reflection_image_loss = self.l1_loss(reflection_predicted, reflection)
-            reflection_perception_loss = self.mse_loss(self.loss_network(reflection_predicted),
-                                                       self.loss_network(reflection))
-            reflection_ssim_loss = self.ssim_loss(reflection_predicted, reflection)
-            reflection_tv_loss = self.tv_loss(reflection_predicted)
-            reflection_gradient_loss = self.gradient_loss(reflection_predicted, reflection)
+        # Exclusion Loss
+        transmission_0_exclusion_loss = self.exclusion_loss(reflection_predicted, transmission_0)
+        transmission_1_exclusion_loss = self.exclusion_loss(reflection_predicted, transmission_1)
         return transmission_0_image_loss + transmission_1_image_loss + transmission_0_perception_loss + \
                transmission_1_perception_loss + transmission_0_ssim_loss + transmission_1_ssim_loss + \
                transmission_0_tv_loss + transmission_1_tv_loss + transmission_0_gradient_loss + \
-               transmission_1_gradient_loss + reflection_image_loss + reflection_perception_loss + reflection_ssim_loss \
-               + reflection_tv_loss + reflection_gradient_loss
+               transmission_1_gradient_loss + transmission_0_exclusion_loss + transmission_1_exclusion_loss
