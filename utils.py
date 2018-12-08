@@ -258,8 +258,8 @@ class ExclusionLoss(nn.Module):
             grad_y_loss = torch.sum(torch.abs(grad_y1_s * grad_y2_s) ** 2, dim=[2, 3]) ** 0.5
 
             grad_loss.append(torch.mean(grad_x_loss) + torch.mean(grad_y_loss))
-            img1 = F.interpolate(img1, scale_factor=2, mode='bilinear')
-            img2 = F.interpolate(img2, scale_factor=2, mode='bilinear')
+            img1 = F.interpolate(img1, scale_factor=2, mode='bilinear', align_corners=True)
+            img2 = F.interpolate(img2, scale_factor=2, mode='bilinear', align_corners=True)
 
         return torch.stack(grad_loss).mean()
 
@@ -283,24 +283,23 @@ class TotalLoss(nn.Module):
         # Image Loss
         transmission_0_image_loss = self.l1_loss(transmission_0, transmission)
         transmission_1_image_loss = self.l1_loss(transmission_1, transmission)
-        # Perception Loss
-        transmission_0_perception_loss = self.mse_loss(self.loss_network(transmission_0),
-                                                       self.loss_network(transmission))
-        transmission_1_perception_loss = self.mse_loss(self.loss_network(transmission_1),
-                                                       self.loss_network(transmission))
-        # SSIM Loss
-        transmission_0_ssim_loss = self.ssim_loss(transmission_0, transmission)
-        transmission_1_ssim_loss = self.ssim_loss(transmission_1, transmission)
-        # TV Loss
-        transmission_0_tv_loss = self.tv_loss(transmission_0)
-        transmission_1_tv_loss = self.tv_loss(transmission_1)
-        # Gradient Loss
-        transmission_0_gradient_loss = self.gradient_loss(transmission_0, transmission)
-        transmission_1_gradient_loss = self.gradient_loss(transmission_1, transmission)
+        # # Perception Loss
+        # transmission_0_perception_loss = self.mse_loss(self.loss_network(transmission_0),
+        #                                                self.loss_network(transmission))
+        # transmission_1_perception_loss = self.mse_loss(self.loss_network(transmission_1),
+        #                                                self.loss_network(transmission))
+        # # SSIM Loss
+        # transmission_0_ssim_loss = self.ssim_loss(transmission_0, transmission)
+        # transmission_1_ssim_loss = self.ssim_loss(transmission_1, transmission)
+        # # TV Loss
+        # transmission_0_tv_loss = self.tv_loss(transmission_0)
+        # transmission_1_tv_loss = self.tv_loss(transmission_1)
+        # # Gradient Loss
+        # transmission_0_gradient_loss = self.gradient_loss(transmission_0, transmission)
+        # transmission_1_gradient_loss = self.gradient_loss(transmission_1, transmission)
         # Exclusion Loss
         transmission_0_exclusion_loss = self.exclusion_loss(reflection_predicted, transmission_0)
         transmission_1_exclusion_loss = self.exclusion_loss(reflection_predicted, transmission_1)
-        return transmission_0_image_loss + transmission_1_image_loss + transmission_0_perception_loss + \
-               transmission_1_perception_loss + transmission_0_ssim_loss + transmission_1_ssim_loss + \
-               transmission_0_tv_loss + transmission_1_tv_loss + transmission_0_gradient_loss + \
-               transmission_1_gradient_loss + transmission_0_exclusion_loss + transmission_1_exclusion_loss
+
+        return transmission_0_image_loss + transmission_1_image_loss + transmission_0_exclusion_loss + \
+               transmission_1_exclusion_loss

@@ -58,16 +58,16 @@ class BasicModel(nn.Module):
     def __init__(self, in_ch, out_ch):
         super(BasicModel, self).__init__()
 
-        self.inc = InConv(in_ch, 64)
-        self.down1 = DownConv(64, 128)
-        self.down2 = DownConv(128, 256)
-        self.down3 = DownConv(256, 512)
-        self.down4 = DownConv(512, 512)
-        self.up4 = UpConv(512, 512)
-        self.up3 = UpConv(512, 256)
-        self.up2 = UpConv(256, 128)
-        self.up1 = UpConv(128, 64)
-        self.outc = OutConv(64, out_ch)
+        self.inc = InConv(in_ch, 32)
+        self.down1 = DownConv(32, 64)
+        self.down2 = DownConv(64, 128)
+        self.down3 = DownConv(128, 256)
+        self.down4 = DownConv(256, 512)
+        self.up4 = UpConv(512, 256)
+        self.up3 = UpConv(256, 128)
+        self.up2 = UpConv(128, 64)
+        self.up1 = UpConv(64, 32)
+        self.outc = OutConv(32, out_ch)
 
     def forward(self, x):
         x = self.inc(x)
@@ -91,7 +91,7 @@ class Model(nn.Module):
         self.g_1 = BasicModel(6, 3)
 
     def forward(self, x):
-        b_0 = self.g_0(x)
-        r = self.h(torch.cat((b_0, x), dim=1))
-        b_1 = self.g_1(torch.cat((r, x), dim=1))
-        return b_0, r, b_1
+        t_0 = self.g_0(x)
+        r_p = self.h(torch.cat((t_0, x), dim=1))
+        b_1 = self.g_1(torch.cat((r_p, x), dim=1))
+        return t_0, r_p, b_1
