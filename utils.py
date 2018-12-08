@@ -123,7 +123,7 @@ class TestDatasetFromFolder(Dataset):
     def __getitem__(self, index):
         blended_image = self.transform(Image.open(self.blended_images[index]).convert('RGB'))
         transmission_image = self.transform(Image.open(self.transmission_images[index]).convert('RGB'))
-
+        # because on test mode, there are no ground truth reflection_image
         return blended_image, transmission_image, None
 
     def __len__(self):
@@ -245,15 +245,36 @@ class TotalLoss(nn.Module):
         self.tv_loss = TVLoss()
         self.gradient_loss = GradientLoss()
 
-    def forward(self, out_images, target_images):
-        # Perception Loss
-        perception_loss = self.mse_loss(self.loss_network(out_images), self.loss_network(target_images))
+    def forward(self, transmission_0, reflection_predicted, transmission_1, transmission, reflection):
         # Image Loss
-        image_loss = self.l1_loss(out_images, target_images)
+        transmission_0_image_loss = self.l1_loss(transmission_0, transmission)
+        transmission_1_image_loss = self.l1_loss(transmission_1, transmission)
+        # Perception Loss
+        transmission_0_perception_loss = self.mse_loss(self.loss_network(transmission_0),
+                                                       self.loss_network(transmission))
+        transmission_1_perception_loss = self.mse_loss(self.loss_network(transmission_1),
+                                                       self.loss_network(transmission))
         # SSIM Loss
-        ssim_loss = self.ssim_loss(out_images, target_images)
+        transmission_0_ssim_loss = self.ssim_loss(transmission_0, transmission)
+        transmission_1_ssim_loss = self.ssim_loss(transmission_1, transmission)
         # TV Loss
-        tv_loss = self.tv_loss(out_images)
+        transmission_0_tv_loss = self.tv_loss(transmission_0)
+        transmission_1_tv_loss = self.tv_loss(transmission_1)
         # Gradient Loss
-        gradient_loss = self.gradient_loss(out_images, target_images)
-        return image_loss + ssim_loss + perception_loss + tv_loss + gradient_loss
+        transmission_0_gradient_loss = self.gradient_loss(transmission_0, transmission)
+        transmission_1_gradient_loss = self.gradient_loss(transmission_1, transmission)
+        if reflection is None:
+            reflection_image_loss, reflection_perception_loss, reflection_ssim_loss, \
+            reflection_tv_loss, reflection_gradient_loss = 0, 0, 0, 0, 0
+        else:
+            reflection_image_loss = self.l1_loss(reflection_predicted, reflection)
+            reflection_perception_loss = self.mse_loss(self.loss_network(reflection_predicted),
+                                                       self.loss_network(reflection))
+            reflection_ssim_loss = self.ssim_loss(reflection_predicted, reflection)
+            reflection_tv_loss = self.tv_loss(reflection_predicted)
+            reflection_gradient_loss = self.gradient_loss(reflection_predicted, reflection)
+        return transmission_0_image_loss + transmission_1_image_loss + transmission_0_perception_loss + \
+               transmission_1_perception_loss + transmission_0_ssim_loss + transmission_1_ssim_loss + \
+               transmission_0_tv_loss + transmission_1_tv_loss + transmission_0_gradient_loss + \
+               transmission_1_gradient_loss + reflection_image_loss + reflection_perception_loss + reflection_ssim_loss \
+               + reflection_tv_loss + reflection_gradient_loss
