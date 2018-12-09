@@ -297,9 +297,8 @@ class TotalLoss(nn.Module):
         # # Gradient Loss
         # transmission_0_gradient_loss = self.gradient_loss(transmission_0, transmission)
         # transmission_1_gradient_loss = self.gradient_loss(transmission_1, transmission)
-        # Exclusion Loss
-        transmission_0_exclusion_loss = self.exclusion_loss(reflection_predicted, transmission_0)
-        transmission_1_exclusion_loss = self.exclusion_loss(reflection_predicted, transmission_1)
+        # # Exclusion Loss
+        # transmission_0_exclusion_loss = self.exclusion_loss(reflection_predicted, transmission_0)
+        # transmission_1_exclusion_loss = self.exclusion_loss(reflection_predicted, transmission_1)
 
-        return transmission_0_image_loss + transmission_1_image_loss + transmission_0_exclusion_loss + \
-               transmission_1_exclusion_loss
+        return transmission_0_image_loss + transmission_1_image_loss
