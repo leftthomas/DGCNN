@@ -103,13 +103,13 @@ class Model(nn.Module):
         # for transmission
         out_capsules_t = self.transform_t(in_capsules)
         out_capsules_t = out_capsules_t.permute(0, 2, 1).contiguous()
-        out_capsules_t = out_capsules_t.view(batch_size, self.capsule_length, -1, in_height // 2, in_width // 2)
-        out_capsules_t = out_capsules_t.view(batch_size, -1, in_height // 2, in_width // 2)
+        out_capsules_t = out_capsules_t.view(batch_size, self.capsule_length, -1, in_height, in_width)
+        out_capsules_t = out_capsules_t.view(batch_size, -1, in_height, in_width)
         # for reflection
         out_capsules_r = self.transform_r(in_capsules)
         out_capsules_r = out_capsules_r.permute(0, 2, 1).contiguous()
-        out_capsules_r = out_capsules_r.view(batch_size, self.capsule_length, -1, in_height // 2, in_width // 2)
-        out_capsules_r = out_capsules_r.view(batch_size, -1, in_height // 2, in_width // 2)
+        out_capsules_r = out_capsules_r.view(batch_size, self.capsule_length, -1, in_height, in_width)
+        out_capsules_r = out_capsules_r.view(batch_size, -1, in_height, in_width)
 
         # decoder of transmission
         x_u5_t = self.up5_t(out_capsules_t)
