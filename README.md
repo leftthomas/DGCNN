@@ -27,7 +27,7 @@ or [GoogleDrive](https://drive.google.com/open?id=1abYah24PZKQS8K9G3Xsd_6a8Raptp
 
 ### Train Model
 ```
-python -m visdom.server -logging_level WARNING & python train.py
+python -m visdom.server -logging_level ERROR & python train.py
 
 optional arguments:
 --crop_size                   image crop size [default value is 224]
