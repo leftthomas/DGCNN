@@ -283,7 +283,7 @@ class TotalLoss(nn.Module):
     def forward(self, transmission_predicted, reflection_predicted, transmission, reflection):
         # Image Loss
         transmission_image_loss = self.l1_loss(transmission_predicted, transmission)
-        if reflection == 0:
+        if type(reflection) is int:
             reflection_image_loss = 0
         else:
             reflection_image_loss = self.l1_loss(reflection_predicted, reflection)
