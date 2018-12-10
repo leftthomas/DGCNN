@@ -31,7 +31,7 @@ python -m visdom.server -logging_level WARNING & python train.py
 
 optional arguments:
 --crop_size                   image crop size [default value is 224]
---batch_size                  train batch size [default value is 8]
+--batch_size                  train batch size [default value is 4]
 --num_epochs                  train epoch number [default value is 100]
 --train_path                  train image data path [default value is 'data/train']
 --test_path                   test image data path [default value is 'data/test']

@@ -65,13 +65,13 @@ class Model(nn.Module):
         self.down4 = DownConv(64, 64)
         self.down5 = DownConv(64, 64)
 
-        self.capsule_length = 32
+        self.capsule_length = 16
         self.transform_t = CapsuleLinear(out_capsules=(input_size // (2 ** 5)) ** 2 * (64 // self.capsule_length),
                                          in_length=self.capsule_length, out_length=self.capsule_length,
-                                         similarity='tonimoto')
+                                         similarity='tonimoto', squash=False)
         self.transform_r = CapsuleLinear(out_capsules=(input_size // (2 ** 5)) ** 2 * (64 // self.capsule_length),
                                          in_length=self.capsule_length, out_length=self.capsule_length,
-                                         similarity='tonimoto')
+                                         similarity='tonimoto', squash=False)
 
         self.up5_t = UpConv(64, 64)
         self.up4_t = UpConv(64, 64)

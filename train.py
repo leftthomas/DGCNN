@@ -110,7 +110,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Train Reflection Removal Model')
     parser.add_argument('--crop_size', default=224, type=int, help='image crop size')
-    parser.add_argument('--batch_size', default=8, type=int, help='train batch size')
+    parser.add_argument('--batch_size', default=4, type=int, help='train batch size')
     parser.add_argument('--num_epochs', default=100, type=int, help='train epoch number')
     parser.add_argument('--train_path', default='data/train', type=str, help='train image data path')
     parser.add_argument('--test_path', default='data/test', type=str, help='test image data path')

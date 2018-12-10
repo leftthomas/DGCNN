@@ -123,8 +123,8 @@ class TestDatasetFromFolder(Dataset):
     def __getitem__(self, index):
         blended_image = self.transform(Image.open(self.blended_images[index]).convert('RGB'))
         transmission_image = self.transform(Image.open(self.transmission_images[index]).convert('RGB'))
-        # because the test dataset have not contain reflection image, so we just return None
-        return blended_image, transmission_image, None
+        # because the test dataset have not contain reflection image, so we just return 0 as no meaning value
+        return blended_image, transmission_image, 0
 
     def __len__(self):
         return len(self.transmission_images)
