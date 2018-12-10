@@ -94,8 +94,6 @@ class TrainDatasetFromFolder(Dataset):
     def __getitem__(self, index):
         transmission_image = self.transform(Image.open(self.transmission_images[index]).convert('RGB'))
         reflection_image = self.transform(Image.open(self.reflection_images[index]).convert('RGB'))
-        if torch.cuda.is_available():
-            transmission_image, reflection_image = transmission_image.to('cuda'), reflection_image.to('cuda')
         # synthetic blended image
         blended_image = synthetic_image(transmission_image, reflection_image)
         # the reflection image have been changed after synthetic, so we compute it by B - T, because B = T + R
@@ -121,8 +119,6 @@ class TestDatasetFromFolder(Dataset):
     def __getitem__(self, index):
         blended_image = self.transform(Image.open(self.blended_images[index]).convert('RGB'))
         transmission_image = self.transform(Image.open(self.transmission_images[index]).convert('RGB'))
-        if torch.cuda.is_available():
-            blended_image, transmission_image = blended_image.to('cuda'), transmission_image.to('cuda')
         # because the test dataset have not contain reflection image, so we just return 0 as no meaning value
         return blended_image, transmission_image, 0
 

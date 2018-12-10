@@ -16,6 +16,11 @@ from utils import PSNRValueMeter, SSIMValueMeter, TrainDatasetFromFolder, TotalL
 def processor(sample):
     blended, transmission, reflection, training = sample
 
+    if torch.cuda.is_available():
+        blended, transmission = blended.to('cuda'), transmission.to('cuda')
+        if type(reflection) is not int:
+            reflection = reflection.to('cuda')
+
     model.train(training)
 
     transmission_predicted, reflection_predicted = model(blended)
