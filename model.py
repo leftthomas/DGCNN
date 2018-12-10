@@ -58,31 +58,31 @@ class Model(nn.Module):
     def __init__(self, input_size):
         super(Model, self).__init__()
 
-        self.in_c = InConv(3, 32)
-        self.down1 = DownConv(32, 64)
-        self.down2 = DownConv(64, 128)
-        self.down3 = DownConv(128, 256)
-        self.down4 = DownConv(256, 512)
+        self.in_c = InConv(3, 16)
+        self.down1 = DownConv(16, 32)
+        self.down2 = DownConv(32, 64)
+        self.down3 = DownConv(64, 128)
+        self.down4 = DownConv(128, 128)
 
         self.capsule_length = 32
-        self.transform_t = CapsuleLinear(out_capsules=(input_size // 32) ** 2 * (512 // self.capsule_length),
+        self.transform_t = CapsuleLinear(out_capsules=(input_size // 32) ** 2 * (128 // self.capsule_length),
                                          in_length=self.capsule_length, out_length=self.capsule_length,
                                          similarity='tonimoto')
-        self.transform_r = CapsuleLinear(out_capsules=(input_size // 32) ** 2 * (512 // self.capsule_length),
+        self.transform_r = CapsuleLinear(out_capsules=(input_size // 32) ** 2 * (128 // self.capsule_length),
                                          in_length=self.capsule_length, out_length=self.capsule_length,
                                          similarity='tonimoto')
 
-        self.up4_t = UpConv(512, 256)
-        self.up3_t = UpConv(256, 128)
-        self.up2_t = UpConv(128, 64)
-        self.up1_t = UpConv(64, 32)
-        self.out_t = OutConv(32, 3)
+        self.up4_t = UpConv(128, 128)
+        self.up3_t = UpConv(128, 64)
+        self.up2_t = UpConv(64, 32)
+        self.up1_t = UpConv(32, 16)
+        self.out_t = OutConv(16, 3)
 
-        self.up4_r = UpConv(512, 256)
-        self.up3_r = UpConv(256, 128)
-        self.up2_r = UpConv(128, 64)
-        self.up1_r = UpConv(64, 32)
-        self.out_r = OutConv(32, 3)
+        self.up4_r = UpConv(128, 128)
+        self.up3_r = UpConv(128, 64)
+        self.up2_r = UpConv(64, 32)
+        self.up1_r = UpConv(32, 16)
+        self.out_r = OutConv(16, 3)
 
     def forward(self, x):
         # encoder
