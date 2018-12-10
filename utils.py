@@ -22,14 +22,15 @@ def image_transform(crop_size):
     return Compose([Resize(crop_size, interpolation=Image.BICUBIC), CenterCrop(crop_size), ToTensor()])
 
 
-def gaussian(window_size, sigma):
-    gauss = torch.Tensor([exp(-(x - window_size // 2) ** 2 / float(2 * sigma ** 2)) for x in range(window_size)])
+def gaussian(window_size, sigma, device='cpu'):
+    gauss = torch.Tensor([exp(-(x - window_size // 2) ** 2 / float(2 * sigma ** 2)) for x in range(window_size)]).to(
+        device)
     return gauss / gauss.sum()
 
 
-def create_window(window_size, channel, sigma=1.5):
-    _1D_window = gaussian(window_size, sigma).unsqueeze(1)
-    _2D_window = _1D_window.mm(_1D_window.t()).float().unsqueeze(0).unsqueeze(0)
+def create_window(window_size, channel, sigma=1.5, device='cpu'):
+    _1D_window = gaussian(window_size, sigma, device).unsqueeze(1)
+    _2D_window = _1D_window.mm(_1D_window.t()).unsqueeze(0).unsqueeze(0)
     window = _2D_window.expand(channel, 1, window_size, window_size).contiguous()
     return window
 
@@ -59,19 +60,14 @@ def _ssim(img1, img2, window, window_size, channel, size_average=True):
 
 def ssim(img1, img2, window_size=11, size_average=True):
     (_, channel, _, _) = img1.size()
-    window = create_window(window_size, channel)
-
-    if img1.is_cuda:
-        window = window.cuda(img1.get_device())
-    window = window.type_as(img1)
-
+    window = create_window(window_size, channel, device=img1.device)
     return _ssim(img1, img2, window, window_size, channel, size_average)
 
 
 def synthetic_image(transmission_image, reflection_image):
     transmission_image, reflection_image = transmission_image.unsqueeze(0), reflection_image.unsqueeze(0)
     (_, channel, _, _) = reflection_image.size()
-    window = create_window(11, channel, sigma=random.uniform(2, 5) / 11)
+    window = create_window(11, channel, sigma=random.uniform(2, 5) / 11, device=transmission_image.device)
     reflection_image = F.conv2d(reflection_image, window, padding=11 // 2, groups=channel)
     blended_image = transmission_image + reflection_image
     if blended_image.max() > 1:
@@ -98,6 +94,8 @@ class TrainDatasetFromFolder(Dataset):
     def __getitem__(self, index):
         transmission_image = self.transform(Image.open(self.transmission_images[index]).convert('RGB'))
         reflection_image = self.transform(Image.open(self.reflection_images[index]).convert('RGB'))
+        if torch.cuda.is_available():
+            transmission_image, reflection_image = transmission_image.to('cuda'), reflection_image.to('cuda')
         # synthetic blended image
         blended_image = synthetic_image(transmission_image, reflection_image)
         # the reflection image have been changed after synthetic, so we compute it by B - T, because B = T + R
@@ -123,6 +121,8 @@ class TestDatasetFromFolder(Dataset):
     def __getitem__(self, index):
         blended_image = self.transform(Image.open(self.blended_images[index]).convert('RGB'))
         transmission_image = self.transform(Image.open(self.transmission_images[index]).convert('RGB'))
+        if torch.cuda.is_available():
+            blended_image, transmission_image = blended_image.to('cuda'), transmission_image.to('cuda')
         # because the test dataset have not contain reflection image, so we just return 0 as no meaning value
         return blended_image, transmission_image, 0
 
@@ -139,7 +139,7 @@ class PSNRValueMeter(meter.Meter):
         # make sure compute the PSNR on YCbCr color space and only on Y channel
         img1 = 0.299 * img1[:, 0, :, :] + 0.587 * img1[:, 1, :, :] + 0.114 * img1[:, 2, :, :]
         img2 = 0.299 * img2[:, 0, :, :] + 0.587 * img2[:, 1, :, :] + 0.114 * img2[:, 2, :, :]
-        self.sum += 10 * log10(1 / ((img1 - img2) ** 2).mean().item())
+        self.sum += 10 * log10(1 / ((img1 - img2) ** 2).mean().detach().cpu().item())
         self.n += 1
 
     def value(self):
@@ -159,7 +159,7 @@ class SSIMValueMeter(meter.Meter):
         # make sure compute the SSIM on YCbCr color space and only on Y channel
         img1 = 0.299 * img1[:, 0, :, :] + 0.587 * img1[:, 1, :, :] + 0.114 * img1[:, 2, :, :]
         img2 = 0.299 * img2[:, 0, :, :] + 0.587 * img2[:, 1, :, :] + 0.114 * img2[:, 2, :, :]
-        self.sum += ssim(img1.unsqueeze(1), img2.unsqueeze(1)).item()
+        self.sum += ssim(img1.unsqueeze(1), img2.unsqueeze(1)).detach().cpu().item()
         self.n += 1
 
     def value(self):
@@ -175,24 +175,10 @@ class SSIMLoss(torch.nn.Module):
         super(SSIMLoss, self).__init__()
         self.window_size = window_size
         self.size_average = size_average
-        self.channel = 1
-        self.window = create_window(window_size, self.channel)
 
     def forward(self, img1, img2):
         (_, channel, _, _) = img1.size()
-
-        if channel == self.channel and self.window.data.type() == img1.data.type():
-            window = self.window
-        else:
-            window = create_window(self.window_size, channel)
-
-            if img1.is_cuda:
-                window = window.cuda(img1.get_device())
-            window = window.type_as(img1)
-
-            self.window = window
-            self.channel = channel
-
+        window = create_window(self.window_size, channel, device=img1.device)
         return 1 - _ssim(img1, img2, window, self.window_size, channel, self.size_average)
 
 

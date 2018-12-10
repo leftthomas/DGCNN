@@ -16,9 +16,6 @@ from utils import PSNRValueMeter, SSIMValueMeter, TrainDatasetFromFolder, TotalL
 def processor(sample):
     blended, transmission, reflection, training = sample
 
-    if torch.cuda.is_available():
-        blended, transmission, reflection = blended.to('cuda'), transmission.to('cuda'), reflection.to('cuda')
-
     model.train(training)
 
     transmission_predicted, reflection_predicted = model(blended)
@@ -38,8 +35,8 @@ def reset_meters():
 
 def on_forward(state):
     meter_loss.add(state['loss'].detach().cpu().item())
-    meter_psnr.add(state['output'].detach().cpu(), state['sample'][1])
-    meter_ssim.add(state['output'].detach().cpu(), state['sample'][1])
+    meter_psnr.add(state['output'], state['sample'][1])
+    meter_ssim.add(state['output'], state['sample'][1])
 
 
 def on_start_epoch(state):
