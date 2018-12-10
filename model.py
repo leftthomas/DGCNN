@@ -1,4 +1,4 @@
-import torch
+from capsule_layer import CapsuleLinear
 from torch import nn
 
 
@@ -54,44 +54,70 @@ class OutConv(nn.Module):
         return (x + 1) / 2
 
 
-class BasicModel(nn.Module):
-    def __init__(self, in_ch, out_ch):
-        super(BasicModel, self).__init__()
+class Model(nn.Module):
+    def __init__(self, input_size):
+        super(Model, self).__init__()
 
-        self.inc = InConv(in_ch, 32)
+        self.in_c = InConv(3, 32)
         self.down1 = DownConv(32, 64)
         self.down2 = DownConv(64, 128)
         self.down3 = DownConv(128, 256)
         self.down4 = DownConv(256, 512)
-        self.up4 = UpConv(512, 256)
-        self.up3 = UpConv(512, 128)
-        self.up2 = UpConv(256, 64)
-        self.up1 = UpConv(128, 32)
-        self.outc = OutConv(64, out_ch)
+
+        self.capsule_length = 32
+        self.transform_t = CapsuleLinear(out_capsules=(input_size // 32) ** 2 * (512 // self.capsule_length),
+                                         in_length=self.capsule_length, out_length=self.capsule_length,
+                                         similarity='tonimoto')
+        self.transform_r = CapsuleLinear(out_capsules=(input_size // 32) ** 2 * (512 // self.capsule_length),
+                                         in_length=self.capsule_length, out_length=self.capsule_length,
+                                         similarity='tonimoto')
+
+        self.up4_t = UpConv(512, 256)
+        self.up3_t = UpConv(256, 128)
+        self.up2_t = UpConv(128, 64)
+        self.up1_t = UpConv(64, 32)
+        self.out_t = OutConv(32, 3)
+
+        self.up4_r = UpConv(512, 256)
+        self.up3_r = UpConv(256, 128)
+        self.up2_r = UpConv(128, 64)
+        self.up1_r = UpConv(64, 32)
+        self.out_r = OutConv(32, 3)
 
     def forward(self, x):
-        x_i = self.inc(x)
-        x_d_1 = self.down1(x_i)
-        x_d_2 = self.down2(x_d_1)
-        x_d_3 = self.down3(x_d_2)
-        x_d_4 = self.down4(x_d_3)
-        x_u_4 = self.up4(x_d_4)
-        x_u_3 = self.up3(torch.cat((x_u_4, x_d_3), dim=1))
-        x_u_2 = self.up2(torch.cat((x_u_3, x_d_2), dim=1))
-        x_u_1 = self.up1(torch.cat((x_u_2, x_d_1), dim=1))
-        x = self.outc(torch.cat((x_u_1, x_i), dim=1))
-        return x
+        # encoder
+        x_i = self.in_c(x)
+        x_d1 = self.down1(x_i)
+        x_d2 = self.down2(x_d1)
+        x_d3 = self.down3(x_d2)
+        x_d4 = self.down4(x_d3)
 
+        # transform
+        batch_size, in_channel, in_height, in_width = x_d4.size()
+        in_capsules = x_d4.permute(0, 2, 3, 1).contiguous()
+        in_capsules = in_capsules.view(batch_size, -1, self.capsule_length)
+        # for transmission
+        out_capsules_t = self.transform_t(in_capsules)
+        out_capsules_t = out_capsules_t.permute(0, 2, 1).contiguous()
+        out_capsules_t = out_capsules_t.view(batch_size, self.capsule_length, -1, in_height // 2, in_width // 2)
+        out_capsules_t = out_capsules_t.view(batch_size, -1, in_height // 2, in_width // 2)
+        # for reflection
+        out_capsules_r = self.transform_r(in_capsules)
+        out_capsules_r = out_capsules_r.permute(0, 2, 1).contiguous()
+        out_capsules_r = out_capsules_r.view(batch_size, self.capsule_length, -1, in_height // 2, in_width // 2)
+        out_capsules_r = out_capsules_r.view(batch_size, -1, in_height // 2, in_width // 2)
 
-class Model(nn.Module):
-    def __init__(self):
-        super(Model, self).__init__()
-        self.g_0 = BasicModel(3, 3)
-        self.h = BasicModel(6, 3)
-        self.g_1 = BasicModel(6, 3)
+        # decoder of transmission
+        x_u4_t = self.up4_t(out_capsules_t)
+        x_u3_t = self.up3_t(x_u4_t)
+        x_u2_t = self.up2_t(x_u3_t)
+        x_u1_t = self.up1_t(x_u2_t)
+        transmission = self.out_t(x_u1_t)
 
-    def forward(self, x):
-        t_0 = self.g_0(x)
-        r_p = self.h(torch.cat((t_0, x), dim=1))
-        b_1 = self.g_1(torch.cat((r_p, x), dim=1))
-        return t_0, r_p, b_1
+        # decoder of reflection
+        x_u4_r = self.up4_r(out_capsules_r)
+        x_u3_r = self.up3_r(x_u4_r)
+        x_u2_r = self.up2_r(x_u3_r)
+        x_u1_r = self.up1_r(x_u2_r)
+        reflection = self.out_r(x_u1_r)
+        return transmission, reflection

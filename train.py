@@ -14,16 +14,16 @@ from utils import PSNRValueMeter, SSIMValueMeter, TrainDatasetFromFolder, TotalL
 
 
 def processor(sample):
-    blended, transmission, training = sample
+    blended, transmission, reflection, training = sample
 
     if torch.cuda.is_available():
-        blended, transmission = blended.to('cuda'), transmission.to('cuda')
+        blended, transmission, reflection = blended.to('cuda'), transmission.to('cuda'), reflection.to('cuda')
 
     model.train(training)
 
-    transmission_0, reflection_predicted, transmission_1 = model(blended)
-    loss = loss_criterion(transmission_0, reflection_predicted, transmission_1, transmission)
-    return loss, transmission_1
+    transmission_predicted, reflection_predicted = model(blended)
+    loss = loss_criterion(transmission_predicted, reflection_predicted, transmission, reflection)
+    return loss, transmission_predicted
 
 
 def on_sample(state):
@@ -134,7 +134,7 @@ if __name__ == '__main__':
     test_real_loader = DataLoader(dataset=test_real_set, num_workers=4, batch_size=BATCH_SIZE, shuffle=False)
     test_synthetic_loader = DataLoader(dataset=test_synthetic_set, num_workers=4, batch_size=BATCH_SIZE, shuffle=False)
 
-    model = Model()
+    model = Model(CROP_SIZE)
     loss_criterion = TotalLoss()
     if torch.cuda.is_available():
         model = model.to('cuda')
