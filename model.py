@@ -1,4 +1,3 @@
-from capsule_layer import CapsuleLinear
 from torch import nn
 
 
@@ -24,6 +23,18 @@ class DownConv(nn.Module):
     def forward(self, x):
         x = self.conv(x)
         x = self.bn(x)
+        x = self.relu(x)
+        return x
+
+
+class Transform(nn.Module):
+    def __init__(self, in_ch, out_ch):
+        super(Transform, self).__init__()
+        self.conv = nn.Conv2d(in_ch, out_ch, 1)
+        self.relu = nn.LeakyReLU(negative_slope=0.2)
+
+    def forward(self, x):
+        x = self.conv(x)
         x = self.relu(x)
         return x
 
@@ -55,37 +66,32 @@ class OutConv(nn.Module):
 
 
 class Model(nn.Module):
-    def __init__(self, input_size):
+    def __init__(self):
         super(Model, self).__init__()
 
-        self.in_c = InConv(3, 16)
-        self.down1 = DownConv(16, 32)
-        self.down2 = DownConv(32, 32)
-        self.down3 = DownConv(32, 64)
-        self.down4 = DownConv(64, 64)
-        self.down5 = DownConv(64, 64)
+        self.in_c = InConv(3, 64)
+        self.down1 = DownConv(64, 128)
+        self.down2 = DownConv(128, 256)
+        self.down3 = DownConv(256, 256)
+        self.down4 = DownConv(256, 512)
+        self.down5 = DownConv(512, 512)
 
-        self.capsule_length = 16
-        self.transform_t = CapsuleLinear(out_capsules=(input_size // (2 ** 5)) ** 2 * (64 // self.capsule_length),
-                                         in_length=self.capsule_length, out_length=self.capsule_length,
-                                         similarity='tonimoto', squash=False)
-        self.transform_r = CapsuleLinear(out_capsules=(input_size // (2 ** 5)) ** 2 * (64 // self.capsule_length),
-                                         in_length=self.capsule_length, out_length=self.capsule_length,
-                                         similarity='tonimoto', squash=False)
+        self.transform_t = Transform(512, 512)
+        self.transform_r = Transform(512, 512)
 
-        self.up5_t = UpConv(64, 64)
-        self.up4_t = UpConv(64, 64)
-        self.up3_t = UpConv(64, 32)
-        self.up2_t = UpConv(32, 32)
-        self.up1_t = UpConv(32, 16)
-        self.out_t = OutConv(16, 3)
+        self.up5_t = UpConv(512, 512)
+        self.up4_t = UpConv(512, 256)
+        self.up3_t = UpConv(256, 256)
+        self.up2_t = UpConv(256, 128)
+        self.up1_t = UpConv(128, 64)
+        self.out_t = OutConv(64, 3)
 
-        self.up5_r = UpConv(64, 64)
-        self.up4_r = UpConv(64, 64)
-        self.up3_r = UpConv(64, 32)
-        self.up2_r = UpConv(32, 32)
-        self.up1_r = UpConv(32, 16)
-        self.out_r = OutConv(16, 3)
+        self.up5_r = UpConv(512, 512)
+        self.up4_r = UpConv(512, 256)
+        self.up3_r = UpConv(256, 256)
+        self.up2_r = UpConv(256, 128)
+        self.up1_r = UpConv(128, 64)
+        self.out_r = OutConv(64, 3)
 
     def forward(self, x):
         # encoder
@@ -97,22 +103,11 @@ class Model(nn.Module):
         x_d5 = self.down5(x_d4)
 
         # transform
-        batch_size, in_channel, in_height, in_width = x_d5.size()
-        in_capsules = x_d5.permute(0, 2, 3, 1).contiguous()
-        in_capsules = in_capsules.view(batch_size, -1, self.capsule_length)
-        # for transmission
-        out_capsules_t = self.transform_t(in_capsules)
-        out_capsules_t = out_capsules_t.permute(0, 2, 1).contiguous()
-        out_capsules_t = out_capsules_t.view(batch_size, self.capsule_length, -1, in_height, in_width)
-        out_capsules_t = out_capsules_t.view(batch_size, -1, in_height, in_width)
-        # for reflection
-        out_capsules_r = self.transform_r(in_capsules)
-        out_capsules_r = out_capsules_r.permute(0, 2, 1).contiguous()
-        out_capsules_r = out_capsules_r.view(batch_size, self.capsule_length, -1, in_height, in_width)
-        out_capsules_r = out_capsules_r.view(batch_size, -1, in_height, in_width)
+        out_t = self.transform_t(x_d5)
+        out_r = self.transform_r(x_d5)
 
         # decoder of transmission
-        x_u5_t = self.up5_t(out_capsules_t)
+        x_u5_t = self.up5_t(out_t)
         x_u4_t = self.up4_t(x_u5_t)
         x_u3_t = self.up3_t(x_u4_t)
         x_u2_t = self.up2_t(x_u3_t)
@@ -120,7 +115,7 @@ class Model(nn.Module):
         transmission = self.out_t(x_u1_t)
 
         # decoder of reflection
-        x_u5_r = self.up5_r(out_capsules_r)
+        x_u5_r = self.up5_r(out_r)
         x_u4_r = self.up4_r(x_u5_r)
         x_u3_r = self.up3_r(x_u4_r)
         x_u2_r = self.up2_r(x_u3_r)

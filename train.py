@@ -132,7 +132,7 @@ if __name__ == '__main__':
     test_real_loader = DataLoader(dataset=test_real_set, batch_size=BATCH_SIZE, shuffle=False)
     test_synthetic_loader = DataLoader(dataset=test_synthetic_set, batch_size=BATCH_SIZE, shuffle=False)
 
-    model = Model(CROP_SIZE)
+    model = Model()
     loss_criterion = TotalLoss()
     if torch.cuda.is_available():
         model = model.to('cuda')

@@ -33,7 +33,7 @@ if TRANSMISSION_NAME is not '':
 else:
     transmission_image = None
 
-model = Model(CROP_SIZE)
+model = Model()
 if USE_CUDA:
     model, blended_image = model.to('cuda'), blended_image.to('cuda')
     model.load_state_dict(torch.load('epochs/' + MODEL_NAME))
@@ -48,9 +48,9 @@ if '/' in BLENDED_NAME:
 else:
     saved_image_name = BLENDED_NAME
 with torch.no_grad():
-    start = time.clock()
+    start = time.process_time()
     transmission_predicted, reflection_predicted = model(blended_image)
-    elapsed = (time.clock() - start)
+    elapsed = (time.process_time() - start)
     print('cost %.4f ' % elapsed + 's')
     if transmission_image is not None:
         # only compute the PSNR and SSIM on YCbCr color space and only on Y channel
