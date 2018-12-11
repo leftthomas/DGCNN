@@ -7,6 +7,7 @@ from os.path import join
 import torch
 import torch.nn.functional as F
 import torchvision.transforms.functional as vision_f
+import torchvision.utils as utils
 from PIL import Image
 from torch import nn
 from torch.utils.data.dataset import Dataset
@@ -151,6 +152,10 @@ class TrainDatasetFromFolder(Dataset):
             blended_image = ToTensor()(FixedCrop()(blended_image, i, j, th, tw))
             if torch.cuda.is_available():
                 transmission_image, blended_image = transmission_image.to('cuda'), blended_image.to('cuda')
+
+        image = torch.stack([blended_image.detach().cpu(), transmission_image.detach().cpu(),
+                             (blended_image - transmission_image).detach().cpu()])
+        utils.save_image(image, '1.png', nrow=3, padding=5, pad_value=255)
         # the reflection image have been changed after synthetic, so we compute it by B - T, because B = T + R
         return blended_image, transmission_image, blended_image - transmission_image
 
@@ -303,10 +308,8 @@ class TotalLoss(nn.Module):
 
     def forward(self, transmission_predicted, reflection_predicted, transmission, reflection):
         # Image Loss
-        transmission_image_loss = self.l1_loss(transmission_predicted, transmission)
-        reflection_image_loss = self.l1_loss(reflection_predicted, reflection)
-        # Image diff Loss
-        image_diff_loss = 1 - self.mse_loss(transmission_predicted, reflection_predicted)
+        transmission_image_loss = self.mse_loss(transmission_predicted, transmission)
+        reflection_image_loss = self.mse_loss(reflection_predicted, reflection)
         # # Perception Loss
         # transmission_perception_loss = self.mse_loss(self.loss_network(transmission_predicted),
         #                                              self.loss_network(transmission))
@@ -317,4 +320,4 @@ class TotalLoss(nn.Module):
         # # Exclusion Loss
         # exclusion_loss = self.exclusion_loss(transmission_predicted, reflection_predicted)
 
-        return transmission_image_loss + reflection_image_loss + image_diff_loss
+        return transmission_image_loss + 0.1 * reflection_image_loss

@@ -4,7 +4,7 @@ import pandas as pd
 import torch
 import torchnet as tnt
 from torch.optim import Adam
-from torch.utils.data import DataLoader, ConcatDataset
+from torch.utils.data import DataLoader
 from torchnet.engine import Engine
 from torchnet.logger import VisdomPlotLogger
 from tqdm import tqdm
@@ -125,8 +125,8 @@ if __name__ == '__main__':
     best_psnr, best_ssim = 0, 0
 
     train_real_set = TrainDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE, data_type='real')
-    train_synthetic_set = TrainDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE, data_type='synthetic')
-    train_set = ConcatDataset([train_real_set, train_synthetic_set])
+    # train_synthetic_set = TrainDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE, data_type='synthetic')
+    train_set = train_real_set
     test_real_set = TestDatasetFromFolder(TEST_PATH, crop_size=512, data_type='real')
     test_synthetic_set = TestDatasetFromFolder(TEST_PATH, crop_size=224, data_type='synthetic')
     # don't use num_workers! it will report CUDA error
