@@ -125,12 +125,12 @@ if __name__ == '__main__':
     best_psnr, best_ssim = 0, 0
 
     train_set = TrainDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE)
-    test_real_set = TestDatasetFromFolder(TEST_PATH, crop_size=CROP_SIZE, data_type='real')
-    test_synthetic_set = TestDatasetFromFolder(TEST_PATH, crop_size=CROP_SIZE, data_type='synthetic')
+    test_real_set = TestDatasetFromFolder(TEST_PATH, crop_size=640, data_type='real')
+    test_synthetic_set = TestDatasetFromFolder(TEST_PATH, crop_size=640, data_type='synthetic')
     # don't use num_workers! it will report CUDA error
     train_loader = DataLoader(dataset=train_set, batch_size=BATCH_SIZE, shuffle=True)
-    test_real_loader = DataLoader(dataset=test_real_set, batch_size=BATCH_SIZE, shuffle=False)
-    test_synthetic_loader = DataLoader(dataset=test_synthetic_set, batch_size=BATCH_SIZE, shuffle=False)
+    test_real_loader = DataLoader(dataset=test_real_set, batch_size=1, shuffle=False)
+    test_synthetic_loader = DataLoader(dataset=test_synthetic_set, batch_size=1, shuffle=False)
 
     model = Model()
     loss_criterion = TotalLoss()
