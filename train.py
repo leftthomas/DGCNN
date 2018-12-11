@@ -124,9 +124,10 @@ if __name__ == '__main__':
     # record current best measures
     best_psnr, best_ssim = 0, 0
 
-    train_real_set = TrainDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE, data_type='real')
+    # train_real_set = TrainDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE, data_type='real')
     # train_synthetic_set = TrainDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE, data_type='synthetic')
-    train_set = train_real_set
+    # train_set = ConcatDataset([train_real_set, train_synthetic_set])
+    train_set = TrainDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE, data_type='real')
     test_real_set = TestDatasetFromFolder(TEST_PATH, crop_size=512, data_type='real')
     test_synthetic_set = TestDatasetFromFolder(TEST_PATH, crop_size=224, data_type='synthetic')
     # don't use num_workers! it will report CUDA error

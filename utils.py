@@ -7,7 +7,6 @@ from os.path import join
 import torch
 import torch.nn.functional as F
 import torchvision.transforms.functional as vision_f
-import torchvision.utils as utils
 from PIL import Image
 from torch import nn
 from torch.utils.data.dataset import Dataset
@@ -153,9 +152,6 @@ class TrainDatasetFromFolder(Dataset):
             if torch.cuda.is_available():
                 transmission_image, blended_image = transmission_image.to('cuda'), blended_image.to('cuda')
 
-        image = torch.stack([blended_image.detach().cpu(), transmission_image.detach().cpu(),
-                             (blended_image - transmission_image).detach().cpu()])
-        utils.save_image(image, '1.png', nrow=3, padding=5, pad_value=255)
         # the reflection image have been changed after synthetic, so we compute it by B - T, because B = T + R
         return blended_image, transmission_image, blended_image - transmission_image
 
