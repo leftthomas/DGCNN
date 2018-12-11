@@ -235,23 +235,6 @@ class SSIMLoss(torch.nn.Module):
         return 1 - _ssim(img1, img2, window, self.window_size, channel, self.size_average)
 
 
-class TVLoss(nn.Module):
-    def __init__(self, tv_loss_weight=1):
-        super(TVLoss, self).__init__()
-        self.tv_loss_weight = tv_loss_weight
-
-    def forward(self, x):
-        batch_size, _, h_x, w_x = x.size()
-        count_h, count_w = self.tensor_size(x[:, :, 1:, :]), self.tensor_size(x[:, :, :, 1:])
-        h_tv = torch.pow((x[:, :, 1:, :] - x[:, :, :h_x - 1, :]), 2).sum()
-        w_tv = torch.pow((x[:, :, :, 1:] - x[:, :, :, :w_x - 1]), 2).sum()
-        return self.tv_loss_weight * 2 * (h_tv / count_h + w_tv / count_w) / batch_size
-
-    @staticmethod
-    def tensor_size(t):
-        return t.size()[1] * t.size()[2] * t.size()[3]
-
-
 def compute_gradient(img):
     grad_x = img[:, :, 1:, :] - img[:, :, :-1, :]
     grad_y = img[:, :, :, 1:] - img[:, :, :, :-1]
@@ -315,7 +298,6 @@ class TotalLoss(nn.Module):
         self.mse_loss = nn.MSELoss()
         self.l1_loss = nn.L1Loss()
         self.ssim_loss = SSIMLoss()
-        self.tv_loss = TVLoss()
         self.gradient_loss = GradientLoss()
         self.exclusion_loss = ExclusionLoss()
 
@@ -323,16 +305,16 @@ class TotalLoss(nn.Module):
         # Image Loss
         transmission_image_loss = self.l1_loss(transmission_predicted, transmission)
         reflection_image_loss = self.l1_loss(reflection_predicted, reflection)
+        # Image diff Loss
+        image_diff_loss = 1 - self.mse_loss(transmission_predicted, reflection_predicted)
         # # Perception Loss
         # transmission_perception_loss = self.mse_loss(self.loss_network(transmission_predicted),
         #                                              self.loss_network(transmission))
         # # SSIM Loss
         # transmission_ssim_loss = self.ssim_loss(transmission_predicted, transmission)
-        # # TV Loss
-        # transmission_tv_loss = self.tv_loss(transmission_predicted)
         # # Gradient Loss
         # transmission_gradient_loss = self.gradient_loss(transmission_predicted, transmission)
         # # Exclusion Loss
         # exclusion_loss = self.exclusion_loss(transmission_predicted, reflection_predicted)
 
-        return transmission_image_loss + reflection_image_loss
+        return transmission_image_loss + reflection_image_loss + image_diff_loss
