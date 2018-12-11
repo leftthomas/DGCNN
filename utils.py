@@ -6,6 +6,7 @@ from os.path import join
 
 import torch
 import torch.nn.functional as F
+import torchvision.transforms.functional as vision_f
 from PIL import Image
 from torch import nn
 from torch.utils.data.dataset import Dataset
@@ -18,7 +19,38 @@ def is_image_file(filename):
     return any(filename.endswith(extension) for extension in ['.png', '.jpg', '.jpeg', '.PNG', '.JPG', '.JPEG'])
 
 
-def image_transform(crop_size):
+def get_params(img, output_size):
+    """Get parameters for ``crop`` for a fixed crop.
+
+    Args:
+        img (PIL Image): Image to be cropped.
+        output_size (tuple): Expected output size of the crop.
+
+    Returns:
+        tuple: params (i, j, h, w) to be passed to ``crop`` for fixed crop.
+    """
+    w, h = img.size
+    th, tw = output_size
+    if w == tw and h == th:
+        return 0, 0, h, w
+
+    i = random.randint(0, h - th)
+    j = random.randint(0, w - tw)
+    return i, j, th, tw
+
+
+class FixedCrop(object):
+    """Crop the given PIL Image at a fixed location."""
+
+    def __call__(self, img, i, j, h, w):
+        return vision_f.crop(img, i, j, h, w)
+
+
+def train_transform():
+    return Compose([FixedCrop(), ToTensor()])
+
+
+def test_transform(crop_size):
     return Compose([Resize(crop_size, interpolation=Image.BICUBIC), CenterCrop(crop_size), ToTensor()])
 
 
@@ -88,8 +120,8 @@ class TrainDatasetFromFolder(Dataset):
         reflection_path = join(dataset_dir, 'reflection')
         self.reflection_images = [join(reflection_path, x) for x in sorted(os.listdir(reflection_path)) if
                                   is_image_file(x)]
-
-        self.transform = image_transform(crop_size)
+        self.crop_size = (crop_size, crop_size)
+        self.transform = train_transform()
 
     def __getitem__(self, index):
         transmission_image = self.transform(Image.open(self.transmission_images[index]).convert('RGB'))
@@ -116,7 +148,7 @@ class TestDatasetFromFolder(Dataset):
         self.blended_images = [join(blended_path, x) for x in sorted(os.listdir(blended_path)) if is_image_file(x)]
         self.transmission_images = [join(transmission_path, x) for x in sorted(os.listdir(transmission_path)) if
                                     is_image_file(x)]
-        self.transform = image_transform(crop_size)
+        self.transform = test_transform(crop_size)
 
     def __getitem__(self, index):
         blended_image = self.transform(Image.open(self.blended_images[index]).convert('RGB'))
