@@ -149,6 +149,8 @@ class TrainDatasetFromFolder(Dataset):
             i, j, th, tw = get_params(transmission_image, output_size=self.crop_size)
             transmission_image = ToTensor()(FixedCrop()(transmission_image, i, j, th, tw))
             blended_image = ToTensor()(FixedCrop()(blended_image, i, j, th, tw))
+            if torch.cuda.is_available():
+                transmission_image, blended_image = transmission_image.to('cuda'), blended_image.to('cuda')
         # the reflection image have been changed after synthetic, so we compute it by B - T, because B = T + R
         return blended_image, transmission_image, blended_image - transmission_image
 
