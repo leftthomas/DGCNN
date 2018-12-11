@@ -6,6 +6,7 @@ from os.path import join
 
 import torch
 import torch.nn.functional as F
+import torchvision.transforms.functional as vision_f
 from PIL import Image
 from torch import nn
 from torch.utils.data.dataset import Dataset
@@ -19,7 +20,34 @@ def is_image_file(filename):
     return any(filename.endswith(extension) for extension in ['.png', '.jpg', '.jpeg', '.PNG', '.JPG', '.JPEG'])
 
 
-def train_transform(crop_size):
+def get_params(img, output_size):
+    """Get parameters for ``crop`` for a fixed crop.
+
+    Args:
+        img (PIL Image): Image to be cropped.
+        output_size (tuple): Expected output size of the crop.
+
+    Returns:
+        tuple: params (i, j, h, w) to be passed to ``crop`` for fixed crop.
+    """
+    w, h = img.size
+    th, tw = output_size
+    if w == tw and h == th:
+        return 0, 0, h, w
+
+    i = random.randint(0, h - th)
+    j = random.randint(0, w - tw)
+    return i, j, th, tw
+
+
+class FixedCrop(object):
+    """Crop the given PIL Image at a fixed location."""
+
+    def __call__(self, img, i, j, h, w):
+        return vision_f.crop(img, i, j, h, w)
+
+
+def train_synthetic_transform(crop_size):
     return Compose(
         [RandomResizedCrop(crop_size, interpolation=Image.BICUBIC), RandomHorizontalFlip(), RandomVerticalFlip(),
          ColorJitter(0.5, 0.5, 0.5, 0.5), ToTensor()])
@@ -87,23 +115,40 @@ def synthetic_image(transmission_image, reflection_image):
 
 
 class TrainDatasetFromFolder(Dataset):
-    def __init__(self, dataset_dir, crop_size):
+    def __init__(self, dataset_dir, crop_size, data_type='real'):
         super(TrainDatasetFromFolder, self).__init__()
-        transmission_path = join(dataset_dir, 'transmission')
+        if data_type not in ['real', 'synthetic']:
+            raise NotImplementedError('the data_type must be real or synthetic')
+
+        transmission_path = join(dataset_dir, data_type, 'transmission')
         self.transmission_images = [join(transmission_path, x) for x in sorted(os.listdir(transmission_path)) if
                                     is_image_file(x)]
-        reflection_path = join(dataset_dir, 'reflection')
-        self.reflection_images = [join(reflection_path, x) for x in sorted(os.listdir(reflection_path)) if
-                                  is_image_file(x)]
-        self.transform = train_transform(crop_size)
+        if data_type == 'synthetic':
+            reflection_path = join(dataset_dir, data_type, 'reflection')
+            self.reflection_images = [join(reflection_path, x) for x in sorted(os.listdir(reflection_path)) if
+                                      is_image_file(x)]
+            self.transform = train_synthetic_transform(crop_size)
+        else:
+            blended_path = join(dataset_dir, data_type, 'blended')
+            self.blended_images = [join(blended_path, x) for x in sorted(os.listdir(blended_path)) if is_image_file(x)]
+            self.crop_size = (crop_size, crop_size)
+
+        self.data_type = data_type
 
     def __getitem__(self, index):
-        transmission_image = self.transform(Image.open(self.transmission_images[index]).convert('RGB'))
-        reflection_image = self.transform(Image.open(self.reflection_images[index]).convert('RGB'))
-        if torch.cuda.is_available():
-            transmission_image, reflection_image = transmission_image.to('cuda'), reflection_image.to('cuda')
-        # synthetic blended image
-        blended_image = synthetic_image(transmission_image, reflection_image)
+        if self.data_type == 'synthetic':
+            transmission_image = self.transform(Image.open(self.transmission_images[index]).convert('RGB'))
+            reflection_image = self.transform(Image.open(random.choice(self.reflection_images)).convert('RGB'))
+            if torch.cuda.is_available():
+                transmission_image, reflection_image = transmission_image.to('cuda'), reflection_image.to('cuda')
+            # synthetic blended image
+            blended_image = synthetic_image(transmission_image, reflection_image)
+        else:
+            transmission_image = Image.open(self.transmission_images[index]).convert('RGB')
+            blended_image = Image.open(self.blended_images[index]).convert('RGB')
+            i, j, th, tw = get_params(transmission_image, output_size=self.crop_size)
+            transmission_image = ToTensor()(FixedCrop()(transmission_image, i, j, th, tw))
+            blended_image = ToTensor()(FixedCrop()(blended_image, i, j, th, tw))
         # the reflection image have been changed after synthetic, so we compute it by B - T, because B = T + R
         return blended_image, transmission_image, blended_image - transmission_image
 
