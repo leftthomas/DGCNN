@@ -254,40 +254,6 @@ class GradientLoss(nn.Module):
         return grad_x_loss + grad_y_loss
 
 
-class ExclusionLoss(nn.Module):
-    def __init__(self, level=3):
-        super(ExclusionLoss, self).__init__()
-        self.level = level
-
-    def forward(self, img1, img2):
-        grad_loss = []
-        for l in range(self.level):
-            grad_x1, grad_y1 = compute_gradient(img1)
-            grad_x2, grad_y2 = compute_gradient(img2)
-            grad_x1_norm = torch.sum(torch.abs(grad_x1) ** 2, dim=[2, 3], keepdim=True) ** 0.5
-            grad_y1_norm = torch.sum(torch.abs(grad_y1) ** 2, dim=[2, 3], keepdim=True) ** 0.5
-            grad_x2_norm = torch.sum(torch.abs(grad_x2) ** 2, dim=[2, 3], keepdim=True) ** 0.5
-            grad_y2_norm = torch.sum(torch.abs(grad_y2) ** 2, dim=[2, 3], keepdim=True) ** 0.5
-            lamda_x1 = (grad_x2_norm / grad_x1_norm) ** 0.5
-            lamda_y1 = (grad_y2_norm / grad_y1_norm) ** 0.5
-            lamda_x2 = (grad_x1_norm / grad_x2_norm) ** 0.5
-            lamda_y2 = (grad_y1_norm / grad_y2_norm) ** 0.5
-
-            grad_x1_s = torch.tanh(lamda_x1 * torch.abs(grad_x1))
-            grad_y1_s = torch.tanh(lamda_y1 * torch.abs(grad_y1))
-            grad_x2_s = torch.tanh(lamda_x2 * torch.abs(grad_x2))
-            grad_y2_s = torch.tanh(lamda_y2 * torch.abs(grad_y2))
-
-            grad_x_loss = torch.sum(torch.abs(grad_x1_s * grad_x2_s) ** 2, dim=[2, 3]) ** 0.5
-            grad_y_loss = torch.sum(torch.abs(grad_y1_s * grad_y2_s) ** 2, dim=[2, 3]) ** 0.5
-
-            grad_loss.append(torch.mean(grad_x_loss) + torch.mean(grad_y_loss))
-            img1 = F.interpolate(img1, scale_factor=2, mode='bilinear', align_corners=True)
-            img2 = F.interpolate(img2, scale_factor=2, mode='bilinear', align_corners=True)
-
-        return torch.stack(grad_loss).mean()
-
-
 class TotalLoss(nn.Module):
     def __init__(self):
         super(TotalLoss, self).__init__()
@@ -300,7 +266,6 @@ class TotalLoss(nn.Module):
         self.l1_loss = nn.L1Loss()
         self.ssim_loss = SSIMLoss()
         self.gradient_loss = GradientLoss()
-        self.exclusion_loss = ExclusionLoss()
 
     def forward(self, transmission_predicted, reflection_predicted, transmission, reflection):
         # Image Loss
@@ -313,7 +278,5 @@ class TotalLoss(nn.Module):
         # transmission_ssim_loss = self.ssim_loss(transmission_predicted, transmission)
         # # Gradient Loss
         # transmission_gradient_loss = self.gradient_loss(transmission_predicted, transmission)
-        # Exclusion Loss
-        exclusion_loss = self.exclusion_loss(transmission_predicted, reflection_predicted)
 
-        return transmission_image_loss + reflection_image_loss + exclusion_loss
+        return transmission_image_loss + reflection_image_loss
