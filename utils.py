@@ -13,7 +13,7 @@ from torch.utils.data.dataset import Dataset
 from torchnet.meter import meter
 from torchvision.models.vgg import vgg16
 from torchvision.transforms import Compose, ToTensor, Resize, CenterCrop, \
-    RandomVerticalFlip, RandomHorizontalFlip, RandomResizedCrop, ColorJitter
+    RandomVerticalFlip, RandomHorizontalFlip, RandomResizedCrop
 
 
 def is_image_file(filename):
@@ -50,7 +50,7 @@ class FixedCrop(object):
 def train_synthetic_transform(crop_size):
     return Compose(
         [RandomResizedCrop(crop_size, interpolation=Image.BICUBIC), RandomHorizontalFlip(), RandomVerticalFlip(),
-         ColorJitter(0.5, 0.5, 0.5, 0.5), ToTensor()])
+         ToTensor()])
 
 
 def test_transform(crop_size):
@@ -304,8 +304,8 @@ class TotalLoss(nn.Module):
 
     def forward(self, transmission_predicted, reflection_predicted, transmission, reflection):
         # Image Loss
-        transmission_image_loss = self.mse_loss(transmission_predicted, transmission)
-        reflection_image_loss = self.mse_loss(reflection_predicted, reflection)
+        transmission_image_loss = self.l1_loss(transmission_predicted, transmission)
+        reflection_image_loss = self.l1_loss(reflection_predicted, reflection)
         # # Perception Loss
         # transmission_perception_loss = self.mse_loss(self.loss_network(transmission_predicted),
         #                                              self.loss_network(transmission))
@@ -313,7 +313,7 @@ class TotalLoss(nn.Module):
         # transmission_ssim_loss = self.ssim_loss(transmission_predicted, transmission)
         # # Gradient Loss
         # transmission_gradient_loss = self.gradient_loss(transmission_predicted, transmission)
-        # # Exclusion Loss
-        # exclusion_loss = self.exclusion_loss(transmission_predicted, reflection_predicted)
+        # Exclusion Loss
+        exclusion_loss = self.exclusion_loss(transmission_predicted, reflection_predicted)
 
-        return transmission_image_loss + 0.1 * reflection_image_loss
+        return transmission_image_loss + reflection_image_loss + exclusion_loss
