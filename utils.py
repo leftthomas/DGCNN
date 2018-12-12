@@ -226,16 +226,16 @@ def compute_gradient(img):
     return grad_x, grad_y
 
 
-class GradientLoss(nn.Module):
+class GradientDiffLoss(nn.Module):
     def __init__(self):
-        super(GradientLoss, self).__init__()
+        super(GradientDiffLoss, self).__init__()
 
     def forward(self, img1, img2):
         grad_x1, grad_y1 = compute_gradient(img1)
         grad_x2, grad_y2 = compute_gradient(img2)
-        grad_x_loss = F.l1_loss(grad_x1, grad_x2)
-        grad_y_loss = F.l1_loss(grad_y1, grad_y2)
-        return grad_x_loss + grad_y_loss
+        grad_x_loss = F.cosine_similarity(grad_x1.view(grad_x1.size(0)), grad_x2.view(grad_x2.size(0)), dim=1)
+        grad_y_loss = F.cosine_similarity(grad_y1.view(grad_y1.size(0)), grad_y2.view(grad_y2.size(0)), dim=1)
+        return grad_x_loss.mean() + grad_y_loss.mean()
 
 
 class TotalLoss(nn.Module):
@@ -248,7 +248,7 @@ class TotalLoss(nn.Module):
         self.loss_network = loss_network
         self.mse_loss = nn.MSELoss()
         self.l1_loss = nn.L1Loss()
-        self.gradient_loss = GradientLoss()
+        self.gradient_loss = GradientDiffLoss()
 
     def forward(self, transmission_predicted, reflection_predicted, transmission, reflection):
         # Image Loss
@@ -257,7 +257,7 @@ class TotalLoss(nn.Module):
         # Perception Loss
         transmission_perception_loss = self.mse_loss(self.loss_network(transmission_predicted),
                                                      self.loss_network(transmission))
-        # # Gradient Loss
-        # transmission_gradient_loss = self.gradient_loss(transmission_predicted, transmission)
+        # Gradient Loss
+        gradient_loss = self.gradient_loss(transmission_predicted, reflection_predicted)
 
-        return transmission_image_loss + reflection_image_loss + transmission_perception_loss
+        return transmission_image_loss + reflection_image_loss + transmission_perception_loss + gradient_loss

@@ -64,7 +64,7 @@ class OutConv(nn.Module):
         self.relu = nn.PReLU()
         self.conv2 = nn.Conv2d(32, out_ch, 1)
         self.bn2 = nn.BatchNorm2d(out_ch)
-        self.sigmoid = nn.Sigmoid()
+        self.tanh = nn.Tanh()
 
     def forward(self, x):
         x = self.conv1(x)
@@ -72,8 +72,8 @@ class OutConv(nn.Module):
         x = self.relu(x)
         x = self.conv2(x)
         x = self.bn2(x)
-        x = self.sigmoid(x)
-        return x
+        x = self.tanh(x)
+        return (x + 1) / 2
 
 
 class Model(nn.Module):
