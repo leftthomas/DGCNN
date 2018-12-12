@@ -233,8 +233,8 @@ class GradientDiffLoss(nn.Module):
     def forward(self, img1, img2):
         grad_x1, grad_y1 = compute_gradient(img1)
         grad_x2, grad_y2 = compute_gradient(img2)
-        grad_x_loss = F.cosine_similarity(grad_x1.view(grad_x1.size(0)), grad_x2.view(grad_x2.size(0)), dim=1)
-        grad_y_loss = F.cosine_similarity(grad_y1.view(grad_y1.size(0)), grad_y2.view(grad_y2.size(0)), dim=1)
+        grad_x_loss = F.cosine_similarity(grad_x1.view(grad_x1.size(0), -1), grad_x2.view(grad_x2.size(0), -1), dim=1)
+        grad_y_loss = F.cosine_similarity(grad_y1.view(grad_y1.size(0), -1), grad_y2.view(grad_y2.size(0), -1), dim=1)
         return grad_x_loss.mean() + grad_y_loss.mean()
 
 
