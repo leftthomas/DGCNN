@@ -7,6 +7,7 @@ from math import log10
 import torch
 import torchvision.utils as utils
 from PIL import Image
+from torchvision.transforms import ToTensor
 
 from model import Model
 from utils import test_transform, ssim
@@ -14,7 +15,7 @@ from utils import test_transform, ssim
 parser = argparse.ArgumentParser(description='Test Single Image')
 parser.add_argument('--blended_name', type=str, help='test blended image name')
 parser.add_argument('--transmission_name', default='', type=str, help='test transmission image name')
-parser.add_argument('--crop_size', default=224, type=int, help='image crop size')
+parser.add_argument('--crop_size', default=None, type=int, help='image crop size')
 parser.add_argument('--model_name', default='model.pth', type=str, help='reflection removal model name')
 parser.add_argument('--test_mode', default='GPU', type=str, choices=['GPU', 'CPU'], help='using GPU or CPU')
 opt = parser.parse_args()
@@ -26,10 +27,16 @@ MODEL_NAME = opt.model_name
 USE_CUDA = True if opt.test_mode == 'GPU' else False
 
 blended_image = Image.open(BLENDED_NAME).convert('RGB')
-blended_image = test_transform(CROP_SIZE)(blended_image).unsqueeze(0)
+if CROP_SIZE is None:
+    blended_image = ToTensor()(blended_image).unsqueeze(0)
+else:
+    blended_image = test_transform(CROP_SIZE)(blended_image).unsqueeze(0)
 if TRANSMISSION_NAME is not '':
     transmission_image = Image.open(TRANSMISSION_NAME).convert('RGB')
-    transmission_image = test_transform(CROP_SIZE)(transmission_image).unsqueeze(0)
+    if CROP_SIZE is None:
+        transmission_image = ToTensor()(transmission_image).unsqueeze(0)
+    else:
+        transmission_image = test_transform(CROP_SIZE)(transmission_image).unsqueeze(0)
 else:
     transmission_image = None
 

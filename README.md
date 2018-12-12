@@ -41,12 +41,12 @@ this process, just type `ps aux | grep visdom` to find the `PID`, then `kill PID
 
 ### Test Single Image
 ```
-python vis.py  --blended_name data/test/real/blended/3.jpg
+python vis.py  --blended_name test_images/qingnan-new2-1-input.jpg
 
 optional arguments:
 --blended_name                test blended image name
 --transmission_name           test transmission image name [default value is '']
---crop_size                   image crop size [default value is 224]
+--crop_size                   image crop size [default value is None]
 --model_name                  reflection removal model name [default value is 'model.pth']
 --test_mode                   using GPU or CPU [default value is 'GPU'](choices:['GPU', 'CPU'])
 ```
