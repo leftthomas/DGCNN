@@ -46,11 +46,11 @@ class UpConv(nn.Module):
         self.bn2 = nn.BatchNorm2d(out_ch)
         self.relu2 = nn.PReLU()
 
-    def forward(self, x):
+    def forward(self, x, output_size=None):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu1(x)
-        x = self.conv2(x)
+        x = self.conv2(x, output_size)
         x = self.bn2(x)
         x = self.relu2(x)
         return x
@@ -107,16 +107,16 @@ class Model(nn.Module):
         x_ud4, x_d4 = self.down4(x_d3)
 
         # decoder of transmission
-        x_t = self.up4_t(x_d4)
-        x_t = self.up3_t(torch.cat((x_t, x_ud4), dim=1))
-        x_t = self.up2_t(torch.cat((x_t, x_ud3), dim=1))
-        x_t = self.up1_t(torch.cat((x_t, x_ud2), dim=1))
+        x_t = self.up4_t(x_d4, output_size=x_ud4.size())
+        x_t = self.up3_t(torch.cat((x_t, x_ud4), dim=1), output_size=x_ud3.size())
+        x_t = self.up2_t(torch.cat((x_t, x_ud3), dim=1), output_size=x_ud2.size())
+        x_t = self.up1_t(torch.cat((x_t, x_ud2), dim=1), output_size=x_ud1.size())
         transmission = self.out_t(torch.cat((x_t, x_ud1), dim=1))
 
         # decoder of reflection
-        x_r = self.up4_r(x_d4)
-        x_r = self.up3_r(torch.cat((x_r, x_ud4), dim=1))
-        x_r = self.up2_r(torch.cat((x_r, x_ud3), dim=1))
-        x_r = self.up1_r(torch.cat((x_r, x_ud2), dim=1))
+        x_r = self.up4_r(x_d4, output_size=x_ud4.size())
+        x_r = self.up3_r(torch.cat((x_r, x_ud4), dim=1), output_size=x_ud3.size())
+        x_r = self.up2_r(torch.cat((x_r, x_ud3), dim=1), output_size=x_ud2.size())
+        x_r = self.up1_r(torch.cat((x_r, x_ud2), dim=1), output_size=x_ud1.size())
         reflection = self.out_r(torch.cat((x_r, x_ud1), dim=1))
         return transmission, reflection
