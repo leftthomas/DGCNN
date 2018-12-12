@@ -68,7 +68,10 @@ def create_window(window_size, channel, sigma=1.5, device='cpu'):
     return window
 
 
-def _ssim(img1, img2, window, window_size, channel, size_average=True):
+def ssim(img1, img2, window_size=11, size_average=True):
+    (_, channel, _, _) = img1.size()
+    window = create_window(window_size, channel, device=img1.device)
+
     mu1 = F.conv2d(img1, window, padding=window_size // 2, groups=channel)
     mu2 = F.conv2d(img2, window, padding=window_size // 2, groups=channel)
 
@@ -89,12 +92,6 @@ def _ssim(img1, img2, window, window_size, channel, size_average=True):
         return ssim_map.mean()
     else:
         return ssim_map.mean(1).mean(1).mean(1)
-
-
-def ssim(img1, img2, window_size=11, size_average=True):
-    (_, channel, _, _) = img1.size()
-    window = create_window(window_size, channel, device=img1.device)
-    return _ssim(img1, img2, window, window_size, channel, size_average)
 
 
 def synthetic_image(transmission_image, reflection_image):
@@ -151,7 +148,8 @@ class TrainDatasetFromFolder(Dataset):
                 transmission_image, blended_image = transmission_image.to('cuda'), blended_image.to('cuda')
 
         # the reflection image have been changed after synthetic, so we compute it by B - T, because B = T + R
-        return blended_image, transmission_image, blended_image - transmission_image
+        # pay attention, B - T may be product negative value, so we need do clamp operation
+        return blended_image, transmission_image, torch.clamp(blended_image - transmission_image, 0, 1)
 
     def __len__(self):
         return len(self.transmission_images)
@@ -176,7 +174,7 @@ class TestDatasetFromFolder(Dataset):
         if torch.cuda.is_available():
             blended_image, transmission_image = blended_image.to('cuda'), transmission_image.to('cuda')
         # because the test dataset have not contain reflection image, so we just return B - T as R
-        return blended_image, transmission_image, blended_image - transmission_image
+        return blended_image, transmission_image, torch.clamp(blended_image - transmission_image, 0, 1)
 
     def __len__(self):
         return len(self.transmission_images)
@@ -222,18 +220,6 @@ class SSIMValueMeter(meter.Meter):
         self.sum = 0.0
 
 
-class SSIMLoss(torch.nn.Module):
-    def __init__(self, window_size=11, size_average=True):
-        super(SSIMLoss, self).__init__()
-        self.window_size = window_size
-        self.size_average = size_average
-
-    def forward(self, img1, img2):
-        (_, channel, _, _) = img1.size()
-        window = create_window(self.window_size, channel, device=img1.device)
-        return 1 - _ssim(img1, img2, window, self.window_size, channel, self.size_average)
-
-
 def compute_gradient(img):
     grad_x = img[:, :, 1:, :] - img[:, :, :-1, :]
     grad_y = img[:, :, :, 1:] - img[:, :, :, :-1]
@@ -262,7 +248,6 @@ class TotalLoss(nn.Module):
         self.loss_network = loss_network
         self.mse_loss = nn.MSELoss()
         self.l1_loss = nn.L1Loss()
-        self.ssim_loss = SSIMLoss()
         self.gradient_loss = GradientLoss()
 
     def forward(self, transmission_predicted, reflection_predicted, transmission, reflection):
@@ -272,8 +257,6 @@ class TotalLoss(nn.Module):
         # Perception Loss
         transmission_perception_loss = self.mse_loss(self.loss_network(transmission_predicted),
                                                      self.loss_network(transmission))
-        # # SSIM Loss
-        # transmission_ssim_loss = self.ssim_loss(transmission_predicted, transmission)
         # # Gradient Loss
         # transmission_gradient_loss = self.gradient_loss(transmission_predicted, transmission)
 
