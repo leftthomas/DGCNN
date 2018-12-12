@@ -149,7 +149,8 @@ class TrainDatasetFromFolder(Dataset):
 
         # the reflection image have been changed after synthetic, so we compute it by B - T, because B = T + R
         # pay attention, B - T may be product negative value, so we need do clamp operation
-        return blended_image, transmission_image, torch.clamp(blended_image - transmission_image, 0, 1)
+        reflection_image = torch.clamp(blended_image - transmission_image, 0, 1)
+        return blended_image, transmission_image, reflection_image
 
     def __len__(self):
         return len(self.transmission_images)
@@ -174,7 +175,8 @@ class TestDatasetFromFolder(Dataset):
         if torch.cuda.is_available():
             blended_image, transmission_image = blended_image.to('cuda'), transmission_image.to('cuda')
         # because the test dataset have not contain reflection image, so we just return B - T as R
-        return blended_image, transmission_image, torch.clamp(blended_image - transmission_image, 0, 1)
+        reflection_image = torch.clamp(blended_image - transmission_image, 0, 1)
+        return blended_image, transmission_image, reflection_image
 
     def __len__(self):
         return len(self.transmission_images)
