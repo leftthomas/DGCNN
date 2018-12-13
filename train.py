@@ -14,12 +14,12 @@ from utils import PSNRValueMeter, SSIMValueMeter, TrainDatasetFromFolder, TotalL
 
 
 def processor(sample):
-    blended, transmission, reflection, training = sample
+    blended, transmission, training = sample
 
     model.train(training)
 
-    transmission_predicted, reflection_predicted = model(blended)
-    loss = loss_criterion(transmission_predicted, reflection_predicted, transmission, reflection)
+    transmission_predicted = model(blended)
+    loss = loss_criterion(transmission_predicted, transmission)
     return loss, transmission_predicted
 
 

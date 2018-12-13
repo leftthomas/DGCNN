@@ -86,17 +86,11 @@ class Model(nn.Module):
         self.down3 = DownConv(128, 256)
         self.down4 = DownConv(256, 512)
 
-        self.up4_t = UpConv(512, 256)
-        self.up3_t = UpConv(512, 128)
-        self.up2_t = UpConv(256, 64)
-        self.up1_t = UpConv(128, 32)
+        self.up4 = UpConv(512, 256)
+        self.up3 = UpConv(512, 128)
+        self.up2 = UpConv(256, 64)
+        self.up1 = UpConv(128, 32)
         self.out_t = OutConv(64, 3)
-
-        self.up4_r = UpConv(512, 256)
-        self.up3_r = UpConv(512, 128)
-        self.up2_r = UpConv(256, 64)
-        self.up1_r = UpConv(128, 32)
-        self.out_r = OutConv(64, 3)
 
     def forward(self, x):
         # encoder
@@ -106,17 +100,10 @@ class Model(nn.Module):
         x_ud3, x_d3 = self.down3(x_d2)
         x_ud4, x_d4 = self.down4(x_d3)
 
-        # decoder of transmission
-        x_t = self.up4_t(x_d4, output_size=x_ud4.size())
-        x_t = self.up3_t(torch.cat((x_t, x_ud4), dim=1), output_size=x_ud3.size())
-        x_t = self.up2_t(torch.cat((x_t, x_ud3), dim=1), output_size=x_ud2.size())
-        x_t = self.up1_t(torch.cat((x_t, x_ud2), dim=1), output_size=x_ud1.size())
+        # decoder
+        x_t = self.up4(x_d4, output_size=x_ud4.size())
+        x_t = self.up3(torch.cat((x_t, x_ud4), dim=1), output_size=x_ud3.size())
+        x_t = self.up2(torch.cat((x_t, x_ud3), dim=1), output_size=x_ud2.size())
+        x_t = self.up1(torch.cat((x_t, x_ud2), dim=1), output_size=x_ud1.size())
         transmission = self.out_t(torch.cat((x_t, x_ud1), dim=1))
-
-        # decoder of reflection
-        x_r = self.up4_r(x_d4, output_size=x_ud4.size())
-        x_r = self.up3_r(torch.cat((x_r, x_ud4), dim=1), output_size=x_ud3.size())
-        x_r = self.up2_r(torch.cat((x_r, x_ud3), dim=1), output_size=x_ud2.size())
-        x_r = self.up1_r(torch.cat((x_r, x_ud2), dim=1), output_size=x_ud1.size())
-        reflection = self.out_r(torch.cat((x_r, x_ud1), dim=1))
-        return transmission, reflection
+        return transmission

@@ -56,7 +56,7 @@ else:
     saved_image_name = BLENDED_NAME
 with torch.no_grad():
     start = time.process_time()
-    transmission_predicted, reflection_predicted = model(blended_image)
+    transmission_predicted = model(blended_image)
     elapsed = (time.process_time() - start)
     print('cost %.4f ' % elapsed + 's')
     if transmission_image is not None:
@@ -70,13 +70,11 @@ with torch.no_grad():
         ssim_value = ssim(transmission_image_l.unsqueeze(1), out_image_l.unsqueeze(1)).detach().cpu().item()
 
         image = torch.stack([blended_image.detach().cpu().squeeze(0), transmission_predicted.detach().cpu().squeeze(0),
-                             reflection_predicted.detach().cpu().squeeze(0),
                              transmission_image.detach().cpu().squeeze(0)])
         saved_image_name = 'results/out_' + saved_image_name.split('.')[0] + '_psnr_%.4f_ssim_%.4f.' \
                            % (psnr_value, ssim_value) + saved_image_name.split('.')[-1]
     else:
-        image = torch.stack([blended_image.detach().cpu().squeeze(0), transmission_predicted.detach().cpu().squeeze(0),
-                             reflection_predicted.detach().cpu().squeeze(0)])
+        image = torch.stack([blended_image.detach().cpu().squeeze(0), transmission_predicted.detach().cpu().squeeze(0)])
         saved_image_name = 'results/out_' + saved_image_name
 
     # make sure it only save once
@@ -87,6 +85,6 @@ with torch.no_grad():
                     ('psnr' not in file and 'psnr' not in saved_image_name):
                 os.remove(file)
     if transmission_image is not None:
-        utils.save_image(image, saved_image_name, nrow=4, padding=5, pad_value=255)
-    else:
         utils.save_image(image, saved_image_name, nrow=3, padding=5, pad_value=255)
+    else:
+        utils.save_image(image, saved_image_name, nrow=2, padding=5, pad_value=255)

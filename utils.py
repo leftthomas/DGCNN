@@ -144,15 +144,7 @@ class TrainDatasetFromFolder(Dataset):
             if torch.cuda.is_available():
                 transmission_image, blended_image = transmission_image.to('cuda'), blended_image.to('cuda')
 
-        # the reflection image have been changed after synthetic, so we compute it by B - T, because B = T + R
-        # pay attention, B - T may be product negative value, so we need do clamp operation
-        reflection_image = torch.clamp(blended_image - transmission_image, 0, 1)
-
-        # image = torch.stack([blended_image.detach().cpu(), transmission_image.detach().cpu(),
-        #                      reflection_image.detach().cpu()])
-        # utils.save_image(image, str(index) + '.jpg', nrow=3, padding=5, pad_value=255)
-
-        return blended_image, transmission_image, reflection_image
+        return blended_image, transmission_image
 
     def __len__(self):
         return len(self.transmission_images)
@@ -176,9 +168,7 @@ class TestDatasetFromFolder(Dataset):
         transmission_image = self.transform(Image.open(self.transmission_images[index]).convert('RGB'))
         if torch.cuda.is_available():
             blended_image, transmission_image = blended_image.to('cuda'), transmission_image.to('cuda')
-        # because the test dataset have not contain reflection image, so we just return B - T as R
-        reflection_image = torch.clamp(blended_image - transmission_image, 0, 1)
-        return blended_image, transmission_image, reflection_image
+        return blended_image, transmission_image
 
     def __len__(self):
         return len(self.transmission_images)
@@ -230,18 +220,16 @@ def compute_gradient(img):
     return grad_x, grad_y
 
 
-class GradientDiffLoss(nn.Module):
+class GradientLoss(nn.Module):
     def __init__(self):
-        super(GradientDiffLoss, self).__init__()
+        super(GradientLoss, self).__init__()
 
     def forward(self, img1, img2):
         grad_x1, grad_y1 = compute_gradient(img1)
         grad_x2, grad_y2 = compute_gradient(img2)
-        grad_x_loss = (1 + F.cosine_similarity(grad_x1.view(grad_x1.size(0), -1), grad_x2.view(grad_x2.size(0), -1),
-                                               dim=1)) / 2
-        grad_y_loss = (1 + F.cosine_similarity(grad_y1.view(grad_y1.size(0), -1), grad_y2.view(grad_y2.size(0), -1),
-                                               dim=1)) / 2
-        return grad_x_loss.mean() + grad_y_loss.mean()
+        grad_x_loss = F.l1_loss(grad_x1, grad_x2)
+        grad_y_loss = F.l1_loss(grad_y1, grad_y2)
+        return grad_x_loss + grad_y_loss
 
 
 class TotalLoss(nn.Module):
@@ -254,16 +242,15 @@ class TotalLoss(nn.Module):
         self.loss_network = loss_network
         self.mse_loss = nn.MSELoss()
         self.l1_loss = nn.L1Loss()
-        self.gradient_loss = GradientDiffLoss()
+        self.gradient_loss = GradientLoss()
 
-    def forward(self, transmission_predicted, reflection_predicted, transmission, reflection):
+    def forward(self, transmission_predicted, transmission):
         # Image Loss
         transmission_image_loss = self.l1_loss(transmission_predicted, transmission)
-        reflection_image_loss = self.l1_loss(reflection_predicted, reflection)
         # Perception Loss
         transmission_perception_loss = self.mse_loss(self.loss_network(transmission_predicted),
                                                      self.loss_network(transmission))
         # Gradient Loss
         # gradient_loss = self.gradient_loss(transmission_predicted, reflection_predicted)
 
-        return transmission_image_loss + reflection_image_loss + transmission_perception_loss
+        return transmission_image_loss + transmission_perception_loss
