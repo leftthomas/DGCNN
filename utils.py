@@ -98,7 +98,8 @@ def synthetic_image(transmission_image, reflection_image):
     transmission_image, reflection_image = transmission_image.unsqueeze(0), reflection_image.unsqueeze(0)
     (_, channel, _, _) = reflection_image.size()
     window_size = random.choice([3, 5, 7, 9, 11])
-    window = create_window(window_size, channel, sigma=random.uniform(0, 2), device=transmission_image.device)
+    window = create_window(window_size, channel, sigma=random.uniform(0, 2) / window_size,
+                           device=transmission_image.device)
     reflection_image = F.conv2d(reflection_image, window, padding=window_size // 2, groups=channel)
     alpha = random.uniform(0.6, 0.8)
     blended_image = alpha * transmission_image + (1 - alpha) * reflection_image
@@ -146,6 +147,11 @@ class TrainDatasetFromFolder(Dataset):
         # the reflection image have been changed after synthetic, so we compute it by B - T, because B = T + R
         # pay attention, B - T may be product negative value, so we need do clamp operation
         reflection_image = torch.clamp(blended_image - transmission_image, 0, 1)
+
+        # image = torch.stack([blended_image.detach().cpu(), transmission_image.detach().cpu(),
+        #                      reflection_image.detach().cpu()])
+        # utils.save_image(image, str(index) + '.jpg', nrow=3, padding=5, pad_value=255)
+
         return blended_image, transmission_image, reflection_image
 
     def __len__(self):
