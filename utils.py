@@ -248,9 +248,9 @@ class TotalLoss(nn.Module):
         # Image Loss
         transmission_image_loss = self.l1_loss(transmission_predicted, transmission)
         # Perception Loss
-        transmission_perception_loss = self.mse_loss(self.loss_network(transmission_predicted),
-                                                     self.loss_network(transmission))
+        # transmission_perception_loss = self.mse_loss(self.loss_network(transmission_predicted),
+        #                                              self.loss_network(transmission))
         # Gradient Loss
         # gradient_loss = self.gradient_loss(transmission_predicted, reflection_predicted)
 
-        return transmission_image_loss + transmission_perception_loss
+        return transmission_image_loss

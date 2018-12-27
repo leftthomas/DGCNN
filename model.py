@@ -7,7 +7,7 @@ class InConv(nn.Module):
         super(InConv, self).__init__()
         self.conv = nn.Conv2d(in_ch, out_ch, 3, padding=1)
         self.bn = nn.BatchNorm2d(out_ch)
-        self.relu = nn.PReLU()
+        self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
         x = self.conv(x)
@@ -21,10 +21,10 @@ class DownConv(nn.Module):
         super(DownConv, self).__init__()
         self.conv1 = nn.Conv2d(in_ch, in_ch, 3, padding=1)
         self.bn1 = nn.BatchNorm2d(in_ch)
-        self.relu1 = nn.PReLU()
+        self.relu1 = nn.ReLU(inplace=True)
         self.conv2 = nn.Conv2d(in_ch, out_ch, 3, stride=2, padding=1)
         self.bn2 = nn.BatchNorm2d(out_ch)
-        self.relu2 = nn.PReLU()
+        self.relu2 = nn.ReLU(inplace=True)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -41,10 +41,10 @@ class UpConv(nn.Module):
         super(UpConv, self).__init__()
         self.conv1 = nn.ConvTranspose2d(in_ch, in_ch, 3, padding=1)
         self.bn1 = nn.BatchNorm2d(in_ch)
-        self.relu1 = nn.PReLU()
+        self.relu1 = nn.ReLU(inplace=True)
         self.conv2 = nn.ConvTranspose2d(in_ch, out_ch, 3, stride=2, padding=1, output_padding=1)
         self.bn2 = nn.BatchNorm2d(out_ch)
-        self.relu2 = nn.PReLU()
+        self.relu2 = nn.ReLU(inplace=True)
 
     def forward(self, x, output_size=None):
         x = self.conv1(x)
@@ -61,7 +61,7 @@ class OutConv(nn.Module):
         super(OutConv, self).__init__()
         self.conv1 = nn.Conv2d(in_ch, 32, 3, padding=1)
         self.bn1 = nn.BatchNorm2d(32)
-        self.relu = nn.PReLU()
+        self.relu = nn.ReLU(inplace=True)
         self.conv2 = nn.Conv2d(32, out_ch, 1)
         self.bn2 = nn.BatchNorm2d(out_ch)
         self.tanh = nn.Tanh()
