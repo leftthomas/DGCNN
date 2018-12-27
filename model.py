@@ -59,19 +59,13 @@ class UpConv(nn.Module):
 class OutConv(nn.Module):
     def __init__(self, in_ch, out_ch):
         super(OutConv, self).__init__()
-        self.conv1 = nn.Conv2d(in_ch, 32, 3, padding=1)
-        self.bn1 = nn.BatchNorm2d(32)
-        self.relu = nn.ReLU(inplace=True)
-        self.conv2 = nn.Conv2d(32, out_ch, 1)
-        self.bn2 = nn.BatchNorm2d(out_ch)
+        self.conv = nn.ConvTranspose2d(in_ch, out_ch, 3, padding=1)
+        self.bn = nn.BatchNorm2d(out_ch)
         self.tanh = nn.Tanh()
 
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.relu(x)
-        x = self.conv2(x)
-        x = self.bn2(x)
+        x = self.conv(x)
+        x = self.bn(x)
         x = self.tanh(x)
         return (x + 1) / 2
 
