@@ -20,7 +20,7 @@ class InConv(nn.Module):
 class DownConv(nn.Module):
     def __init__(self, in_ch, out_ch):
         super(DownConv, self).__init__()
-        self.conv1 = CapsuleConv2d(in_ch, in_ch, 3, in_ch, out_ch, padding=1)
+        self.conv1 = CapsuleConv2d(in_ch, in_ch, 3, in_ch, in_ch, padding=1)
         self.bn1 = nn.BatchNorm2d(in_ch)
         self.relu1 = nn.ReLU(inplace=True)
         self.conv2 = CapsuleConv2d(in_ch, out_ch, 3, in_ch, out_ch, stride=2, padding=1)
@@ -40,7 +40,7 @@ class DownConv(nn.Module):
 class UpConv(nn.Module):
     def __init__(self, in_ch, out_ch):
         super(UpConv, self).__init__()
-        self.conv1 = CapsuleConvTranspose2d(in_ch, in_ch, 3, in_ch, out_ch, padding=1)
+        self.conv1 = CapsuleConvTranspose2d(in_ch, in_ch, 3, in_ch, in_ch, padding=1)
         self.bn1 = nn.BatchNorm2d(in_ch)
         self.relu1 = nn.ReLU(inplace=True)
         self.conv2 = CapsuleConvTranspose2d(in_ch, out_ch, 3, in_ch, out_ch, stride=2, padding=1, output_padding=1)
