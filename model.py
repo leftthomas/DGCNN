@@ -44,8 +44,7 @@ class UpConv(nn.Module):
         self.bn1 = nn.BatchNorm2d(in_ch)
         self.relu1 = nn.ReLU(inplace=True)
         self.conv2 = CapsuleConvTranspose2d(in_ch, out_ch, 3, in_ch // 2, out_ch // 2, stride=2, padding=1,
-                                            output_padding=1,
-                                            squash=False)
+                                            output_padding=1, squash=False)
         self.bn2 = nn.BatchNorm2d(out_ch)
         self.relu2 = nn.ReLU(inplace=True)
 
