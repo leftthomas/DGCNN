@@ -39,10 +39,10 @@ def reset_meters():
 
 def on_forward(state):
     meter_loss.add(state['loss'].detach().cpu().item())
-    meter_first_psnr.add(state['output'][0], state['sample'][1])
-    meter_first_ssim.add(state['output'][0], state['sample'][1])
-    meter_second_psnr.add(state['output'][1], state['sample'][2])
-    meter_second_ssim.add(state['output'][1], state['sample'][2])
+    meter_first_psnr.add(state['output'][0].detach().cpu(), state['sample'][1])
+    meter_first_ssim.add(state['output'][0].detach().cpu(), state['sample'][1])
+    meter_second_psnr.add(state['output'][1].detach().cpu(), state['sample'][2])
+    meter_second_ssim.add(state['output'][1].detach().cpu(), state['sample'][2])
 
 
 def on_start_epoch(state):
