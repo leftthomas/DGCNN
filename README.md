@@ -41,7 +41,7 @@ this process, just type `ps aux | grep visdom` to find the `PID`, then `kill PID
 
 ### Test Single Image
 ```
-python vis.py  --mixed_name test_images/qingnan-new2-6-input.jpg
+python vis.py  --mixed_name test_images/mixed_1_2.jpg
 
 optional arguments:
 --mixed_name                  test mixed image name
