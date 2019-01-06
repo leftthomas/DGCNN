@@ -1,3 +1,4 @@
+import argparse
 import os
 import random
 from math import exp
@@ -6,6 +7,7 @@ from os.path import join
 
 import torch
 import torch.nn.functional as F
+import torchvision.utils as utils
 from PIL import Image
 from torch import nn
 from torch.utils.data.dataset import Dataset
@@ -151,3 +153,27 @@ class TotalLoss(nn.Module):
         second_loss = self.mse_loss(second_predicted, second_image)
 
         return first_loss + second_loss
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Generate Mixed Image')
+    parser.add_argument('--first_name', type=str, help='first image name')
+    parser.add_argument('--second_name', type=str, help='second image name')
+    parser.add_argument('--crop_size', default=512, type=int, help='image crop size')
+    opt = parser.parse_args()
+
+    FIRST_NAME = opt.first_name
+    SECOND_NAME = opt.second_name
+    CROP_SIZE = opt.crop_size
+
+    first_image = test_transform(CROP_SIZE)(Image.open(FIRST_NAME).convert('RGB'))
+    second_image = test_transform(CROP_SIZE)(Image.open(SECOND_NAME).convert('RGB'))
+    if '/' in FIRST_NAME:
+        FIRST_NAME = FIRST_NAME.split('/')[-1].split('.')[0]
+    if '/' in SECOND_NAME:
+        SECOND_NAME = SECOND_NAME.split('/')[-1].split('.')[0]
+    saved_image_name = 'test_images/mixed_' + str(FIRST_NAME) + '_' + str(SECOND_NAME) + '.jpg'
+    mixed_image = first_image + second_image
+    if mixed_image.max() > 0:
+        mixed_image = mixed_image / mixed_image.max()
+    utils.save_image(mixed_image, saved_image_name, nrow=1)
