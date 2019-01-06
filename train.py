@@ -22,7 +22,7 @@ def processor(sample):
 
     first_predicted, second_predicted = model(mixed)
     loss = loss_criterion(first_predicted, second_predicted, first, second)
-    return loss, first_predicted, second_predicted
+    return loss, [first_predicted, second_predicted]
 
 
 def on_sample(state):
