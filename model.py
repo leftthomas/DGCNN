@@ -1,14 +1,13 @@
 import torch
-from capsule_layer import CapsuleConv2d, CapsuleConvTranspose2d
 from torch import nn
 
 
 class InConv(nn.Module):
     def __init__(self, in_ch, out_ch):
         super(InConv, self).__init__()
-        self.conv = CapsuleConv2d(in_ch, out_ch, 3, in_ch, out_ch // 2, padding=1, squash=False)
+        self.conv = nn.Conv2d(in_ch, out_ch, 3, padding=1)
         self.bn = nn.BatchNorm2d(out_ch)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         x = self.conv(x)
@@ -20,12 +19,12 @@ class InConv(nn.Module):
 class DownConv(nn.Module):
     def __init__(self, in_ch, out_ch):
         super(DownConv, self).__init__()
-        self.conv1 = CapsuleConv2d(in_ch, in_ch, 3, in_ch, in_ch // 2, padding=1, squash=False)
+        self.conv1 = nn.Conv2d(in_ch, in_ch, 3, padding=1)
         self.bn1 = nn.BatchNorm2d(in_ch)
-        self.relu1 = nn.ReLU(inplace=True)
-        self.conv2 = CapsuleConv2d(in_ch, out_ch, 3, in_ch // 2, out_ch // 2, stride=2, padding=1, squash=False)
+        self.relu1 = nn.ReLU()
+        self.conv2 = nn.Conv2d(in_ch, out_ch, 3, stride=2, padding=1)
         self.bn2 = nn.BatchNorm2d(out_ch)
-        self.relu2 = nn.ReLU(inplace=True)
+        self.relu2 = nn.ReLU()
 
     def forward(self, x):
         x = self.conv1(x)
@@ -40,13 +39,12 @@ class DownConv(nn.Module):
 class UpConv(nn.Module):
     def __init__(self, in_ch, out_ch):
         super(UpConv, self).__init__()
-        self.conv1 = CapsuleConvTranspose2d(in_ch, in_ch, 3, in_ch, in_ch // 2, padding=1, squash=False)
+        self.conv1 = nn.ConvTranspose2d(in_ch, in_ch, 3, padding=1)
         self.bn1 = nn.BatchNorm2d(in_ch)
-        self.relu1 = nn.ReLU(inplace=True)
-        self.conv2 = CapsuleConvTranspose2d(in_ch, out_ch, 3, in_ch // 2, out_ch // 2, stride=2, padding=1,
-                                            output_padding=1, squash=False)
+        self.relu1 = nn.ReLU()
+        self.conv2 = nn.ConvTranspose2d(in_ch, out_ch, 3, stride=2, padding=1, output_padding=1)
         self.bn2 = nn.BatchNorm2d(out_ch)
-        self.relu2 = nn.ReLU(inplace=True)
+        self.relu2 = nn.ReLU()
 
     def forward(self, x, output_size=None):
         x = self.conv1(x)
@@ -61,7 +59,7 @@ class UpConv(nn.Module):
 class OutConv(nn.Module):
     def __init__(self, in_ch, out_ch):
         super(OutConv, self).__init__()
-        self.conv = CapsuleConvTranspose2d(in_ch, out_ch, 3, in_ch // 2, out_ch, padding=1, squash=False)
+        self.conv = nn.ConvTranspose2d(in_ch, out_ch, 3, padding=1)
         self.bn = nn.BatchNorm2d(out_ch)
         self.tanh = nn.Tanh()
 
@@ -82,11 +80,17 @@ class Model(nn.Module):
         self.down3 = DownConv(128, 256)
         self.down4 = DownConv(256, 512)
 
-        self.up4 = UpConv(512, 256)
-        self.up3 = UpConv(512, 128)
-        self.up2 = UpConv(256, 64)
-        self.up1 = UpConv(128, 32)
+        self.up4_t = UpConv(512, 256)
+        self.up3_t = UpConv(512, 128)
+        self.up2_t = UpConv(256, 64)
+        self.up1_t = UpConv(128, 32)
         self.out_t = OutConv(64, 3)
+
+        self.up4_r = UpConv(512, 256)
+        self.up3_r = UpConv(512, 128)
+        self.up2_r = UpConv(256, 64)
+        self.up1_r = UpConv(128, 32)
+        self.out_r = OutConv(64, 3)
 
     def forward(self, x):
         # encoder
@@ -96,10 +100,17 @@ class Model(nn.Module):
         x_ud3, x_d3 = self.down3(x_d2)
         x_ud4, x_d4 = self.down4(x_d3)
 
-        # decoder
-        x_t = self.up4(x_d4, output_size=x_ud4.size())
-        x_t = self.up3(torch.cat((x_t, x_ud4), dim=1), output_size=x_ud3.size())
-        x_t = self.up2(torch.cat((x_t, x_ud3), dim=1), output_size=x_ud2.size())
-        x_t = self.up1(torch.cat((x_t, x_ud2), dim=1), output_size=x_ud1.size())
-        transmission = self.out_t(torch.cat((x_t, x_ud1), dim=1))
-        return transmission
+        # decoder of first image
+        x_t = self.up4_t(x_d4, output_size=x_ud4.size())
+        x_t = self.up3_t(torch.cat((x_t, x_ud4), dim=1), output_size=x_ud3.size())
+        x_t = self.up2_t(torch.cat((x_t, x_ud3), dim=1), output_size=x_ud2.size())
+        x_t = self.up1_t(torch.cat((x_t, x_ud2), dim=1), output_size=x_ud1.size())
+        first_image = self.out_t(torch.cat((x_t, x_ud1), dim=1))
+
+        # decoder of second image
+        x_r = self.up4_r(x_d4, output_size=x_ud4.size())
+        x_r = self.up3_r(torch.cat((x_r, x_ud4), dim=1), output_size=x_ud3.size())
+        x_r = self.up2_r(torch.cat((x_r, x_ud3), dim=1), output_size=x_ud2.size())
+        x_r = self.up1_r(torch.cat((x_r, x_ud2), dim=1), output_size=x_ud1.size())
+        second_image = self.out_r(torch.cat((x_r, x_ud1), dim=1))
+        return first_image, second_image

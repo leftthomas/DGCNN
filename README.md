@@ -1,5 +1,5 @@
 # RRCapsNet
-A PyTorch implementation of Convolutional Capsule Network based on the paper [Convolutional Capsule Network For Single Image Reflection Removal]().
+A PyTorch implementation of Convolutional Capsule Network based on the paper [Convolutional Capsule Network For Mixed Image Separation]().
 
 ## Requirements
 - [Anaconda](https://www.anaconda.com/download/)
@@ -41,13 +41,12 @@ this process, just type `ps aux | grep visdom` to find the `PID`, then `kill PID
 
 ### Test Single Image
 ```
-python vis.py  --blended_name test_images/qingnan-new2-1-input.jpg
+python vis.py  --mixed_name test_images/qingnan-new2-6-input.jpg
 
 optional arguments:
---blended_name                test blended image name
---transmission_name           test transmission image name [default value is '']
+--mixed_name                  test mixed image name
 --crop_size                   image crop size [default value is None]
---model_name                  reflection removal model name [default value is 'model.pth']
+--model_name                  mixed image separation model name [default value is 'model.pth']
 --test_mode                   using GPU or CPU [default value is 'GPU'](choices:['GPU', 'CPU'])
 ```
-The output reflection removed image is on `results` directory.
+The separated images are on `results` directory.

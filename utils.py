@@ -6,12 +6,10 @@ from os.path import join
 
 import torch
 import torch.nn.functional as F
-import torchvision.transforms.functional as vision_f
 from PIL import Image
 from torch import nn
 from torch.utils.data.dataset import Dataset
 from torchnet.meter import meter
-from torchvision.models.vgg import vgg16
 from torchvision.transforms import Compose, ToTensor, Resize, CenterCrop, \
     RandomVerticalFlip, RandomHorizontalFlip, RandomCrop
 
@@ -20,34 +18,7 @@ def is_image_file(filename):
     return any(filename.endswith(extension) for extension in ['.png', '.jpg', '.jpeg', '.PNG', '.JPG', '.JPEG'])
 
 
-def get_params(img, output_size):
-    """Get parameters for ``crop`` for a fixed crop.
-
-    Args:
-        img (PIL Image): Image to be cropped.
-        output_size (tuple): Expected output size of the crop.
-
-    Returns:
-        tuple: params (i, j, h, w) to be passed to ``crop`` for fixed crop.
-    """
-    w, h = img.size
-    th, tw = output_size
-    if w == tw and h == th:
-        return 0, 0, h, w
-
-    i = random.randint(0, h - th)
-    j = random.randint(0, w - tw)
-    return i, j, th, tw
-
-
-class FixedCrop(object):
-    """Crop the given PIL Image at a fixed location."""
-
-    def __call__(self, img, i, j, h, w):
-        return vision_f.crop(img, i, j, h, w)
-
-
-def train_synthetic_transform(crop_size):
+def train_transform(crop_size):
     return Compose([RandomCrop(crop_size), RandomHorizontalFlip(), RandomVerticalFlip(), ToTensor()])
 
 
@@ -94,83 +65,39 @@ def ssim(img1, img2, window_size=11, size_average=True):
         return ssim_map.mean(1).mean(1).mean(1)
 
 
-def synthetic_image(transmission_image, reflection_image):
-    transmission_image, reflection_image = transmission_image.unsqueeze(0), reflection_image.unsqueeze(0)
-    (_, channel, _, _) = reflection_image.size()
-    window_size = random.choice([3, 5, 7, 9, 11])
-    window = create_window(window_size, channel, sigma=random.uniform(0, 2), device=transmission_image.device)
-    reflection_image = F.conv2d(reflection_image, window, padding=window_size // 2, groups=channel)
-    alpha = random.uniform(0.6, 0.8)
-    blended_image = alpha * transmission_image + (1 - alpha) * reflection_image
-    return blended_image.squeeze(0)
+class DatasetFromFolder(Dataset):
+    def __init__(self, dataset_dir, crop_size, data_type='train'):
+        super(DatasetFromFolder, self).__init__()
 
-
-class TrainDatasetFromFolder(Dataset):
-    def __init__(self, dataset_dir, crop_size, data_type='real'):
-        super(TrainDatasetFromFolder, self).__init__()
-        if data_type not in ['real', 'synthetic']:
-            raise NotImplementedError('the data_type must be real or synthetic')
-
-        transmission_path = join(dataset_dir, data_type, 'transmission')
-        self.transmission_images = [join(transmission_path, x) for x in sorted(os.listdir(transmission_path)) if
-                                    is_image_file(x)]
-        if data_type == 'synthetic':
-            reflection_path = join(dataset_dir, data_type, 'reflection')
-            self.reflection_images = [join(reflection_path, x) for x in sorted(os.listdir(reflection_path)) if
-                                      is_image_file(x)]
-            self.transform = train_synthetic_transform(crop_size)
+        first_image_path = join(dataset_dir, 'first')
+        self.first_images = [join(first_image_path, x) for x in sorted(os.listdir(first_image_path)) if
+                             is_image_file(x)]
+        second_image_path = join(dataset_dir, 'second')
+        self.second_images = [join(second_image_path, x) for x in sorted(os.listdir(second_image_path)) if
+                              is_image_file(x)]
+        if data_type == 'train':
+            self.transform = train_transform(crop_size)
+        elif data_type == 'test':
+            self.transform = test_transform(crop_size)
         else:
-            blended_path = join(dataset_dir, data_type, 'blended')
-            self.blended_images = [join(blended_path, x) for x in sorted(os.listdir(blended_path)) if is_image_file(x)]
-            self.crop_size = (crop_size, crop_size)
-
+            raise NotImplementedError('the data_type must be train or test')
         self.data_type = data_type
 
     def __getitem__(self, index):
-        if self.data_type == 'synthetic':
-            transmission_image = self.transform(Image.open(self.transmission_images[index]).convert('RGB'))
-            reflection_image = self.transform(Image.open(random.choice(self.reflection_images)).convert('RGB'))
-            if torch.cuda.is_available():
-                transmission_image, reflection_image = transmission_image.to('cuda'), reflection_image.to('cuda')
-            # synthetic blended image
-            blended_image = synthetic_image(transmission_image, reflection_image)
+        first_image = self.transform(Image.open(self.first_images[index]).convert('RGB'))
+        if self.data_type == 'train':
+            second_image = self.transform(Image.open(random.choice(self.second_images)).convert('RGB'))
         else:
-            transmission_image = Image.open(self.transmission_images[index]).convert('RGB')
-            blended_image = Image.open(self.blended_images[index]).convert('RGB')
-            i, j, th, tw = get_params(transmission_image, output_size=self.crop_size)
-            transmission_image = ToTensor()(FixedCrop()(transmission_image, i, j, th, tw))
-            blended_image = ToTensor()(FixedCrop()(blended_image, i, j, th, tw))
-            if torch.cuda.is_available():
-                transmission_image, blended_image = transmission_image.to('cuda'), blended_image.to('cuda')
+            second_image = self.transform(Image.open(self.second_images[index]).convert('RGB'))
+        # synthetic image
+        mixed_image = first_image + second_image
+        if mixed_image.max() > 0:
+            mixed_image = mixed_image / mixed_image.max()
 
-        return blended_image, transmission_image
+        return mixed_image, first_image, second_image
 
     def __len__(self):
-        return len(self.transmission_images)
-
-
-class TestDatasetFromFolder(Dataset):
-    def __init__(self, dataset_dir, crop_size, data_type='real'):
-        super(TestDatasetFromFolder, self).__init__()
-        if data_type not in ['real', 'synthetic']:
-            raise NotImplementedError('the data_type must be real or synthetic')
-
-        blended_path = join(dataset_dir, data_type, 'blended')
-        transmission_path = join(dataset_dir, data_type, 'transmission')
-        self.blended_images = [join(blended_path, x) for x in sorted(os.listdir(blended_path)) if is_image_file(x)]
-        self.transmission_images = [join(transmission_path, x) for x in sorted(os.listdir(transmission_path)) if
-                                    is_image_file(x)]
-        self.transform = test_transform(crop_size)
-
-    def __getitem__(self, index):
-        blended_image = self.transform(Image.open(self.blended_images[index]).convert('RGB'))
-        transmission_image = self.transform(Image.open(self.transmission_images[index]).convert('RGB'))
-        if torch.cuda.is_available():
-            blended_image, transmission_image = blended_image.to('cuda'), transmission_image.to('cuda')
-        return blended_image, transmission_image
-
-    def __len__(self):
-        return len(self.transmission_images)
+        return len(self.first_images)
 
 
 class PSNRValueMeter(meter.Meter):
@@ -213,43 +140,14 @@ class SSIMValueMeter(meter.Meter):
         self.sum = 0.0
 
 
-def compute_gradient(img):
-    grad_x = img[:, :, 1:, :] - img[:, :, :-1, :]
-    grad_y = img[:, :, :, 1:] - img[:, :, :, :-1]
-    return grad_x, grad_y
-
-
-class GradientLoss(nn.Module):
-    def __init__(self):
-        super(GradientLoss, self).__init__()
-
-    def forward(self, img1, img2):
-        grad_x1, grad_y1 = compute_gradient(img1)
-        grad_x2, grad_y2 = compute_gradient(img2)
-        grad_x_loss = F.l1_loss(grad_x1, grad_x2)
-        grad_y_loss = F.l1_loss(grad_y1, grad_y2)
-        return grad_x_loss + grad_y_loss
-
-
 class TotalLoss(nn.Module):
     def __init__(self):
         super(TotalLoss, self).__init__()
-        vgg = vgg16(pretrained=True)
-        loss_network = nn.Sequential(*list(vgg.features)[:31]).eval()
-        for param in loss_network.parameters():
-            param.requires_grad = False
-        self.loss_network = loss_network
         self.mse_loss = nn.MSELoss()
-        self.l1_loss = nn.L1Loss()
-        self.gradient_loss = GradientLoss()
 
-    def forward(self, transmission_predicted, transmission):
+    def forward(self, first_predicted, second_predicted, first_image, second_image):
         # Image Loss
-        transmission_image_loss = self.l1_loss(transmission_predicted, transmission)
-        # Perception Loss
-        # transmission_perception_loss = self.mse_loss(self.loss_network(transmission_predicted),
-        #                                              self.loss_network(transmission))
-        # Gradient Loss
-        # gradient_loss = self.gradient_loss(transmission_predicted, reflection_predicted)
+        first_loss = self.mse_loss(first_predicted, first_image)
+        second_loss = self.mse_loss(second_predicted, second_image)
 
-        return transmission_image_loss
+        return first_loss + second_loss

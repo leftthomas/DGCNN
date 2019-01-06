@@ -10,17 +10,19 @@ from torchnet.logger import VisdomPlotLogger
 from tqdm import tqdm
 
 from model import Model
-from utils import PSNRValueMeter, SSIMValueMeter, TrainDatasetFromFolder, TotalLoss, TestDatasetFromFolder
+from utils import PSNRValueMeter, SSIMValueMeter, DatasetFromFolder, TotalLoss
 
 
 def processor(sample):
-    blended, transmission, training = sample
+    mixed, first, second, training = sample
+    if torch.cuda.is_available():
+        mixed, first, second = mixed.to('cuda'), first.to('cuda'), second.to('cuda')
 
     model.train(training)
 
-    transmission_predicted = model(blended)
-    loss = loss_criterion(transmission_predicted, transmission)
-    return loss, transmission_predicted
+    first_predicted, second_predicted = model(mixed)
+    loss = loss_criterion(first_predicted, second_predicted, first, second)
+    return loss, first_predicted, second_predicted
 
 
 def on_sample(state):
@@ -29,14 +31,18 @@ def on_sample(state):
 
 def reset_meters():
     meter_loss.reset()
-    meter_psnr.reset()
-    meter_ssim.reset()
+    meter_first_psnr.reset()
+    meter_first_ssim.reset()
+    meter_second_psnr.reset()
+    meter_second_ssim.reset()
 
 
 def on_forward(state):
     meter_loss.add(state['loss'].detach().cpu().item())
-    meter_psnr.add(state['output'], state['sample'][1])
-    meter_ssim.add(state['output'], state['sample'][1])
+    meter_first_psnr.add(state['output'][0], state['sample'][1])
+    meter_first_ssim.add(state['output'][0], state['sample'][1])
+    meter_second_psnr.add(state['output'][1], state['sample'][2])
+    meter_second_ssim.add(state['output'][1], state['sample'][2])
 
 
 def on_start_epoch(state):
@@ -45,67 +51,68 @@ def on_start_epoch(state):
 
 
 def on_end_epoch(state):
-    print('[Epoch %d] Training Loss: %.4f Training PSNR: %.4f dB Training SSIM: %.4f' % (
-        state['epoch'], meter_loss.value()[0], meter_psnr.value(), meter_ssim.value()))
+    print('[Epoch %d] Training Loss: %.4f Training First PSNR: %.4f dB Training First SSIM: %.4f Training Second PSNR:'
+          ' %.4f dB Training Second SSIM: %.4f' % (state['epoch'], meter_loss.value()[0],
+                                                   meter_first_psnr.value(), meter_first_ssim.value(),
+                                                   meter_second_psnr.value(), meter_second_ssim.value()))
 
     train_loss_logger.log(state['epoch'], meter_loss.value()[0])
-    train_psnr_logger.log(state['epoch'], meter_psnr.value())
-    train_ssim_logger.log(state['epoch'], meter_ssim.value())
+    train_first_psnr_logger.log(state['epoch'], meter_first_psnr.value())
+    train_first_ssim_logger.log(state['epoch'], meter_first_ssim.value())
+    train_second_psnr_logger.log(state['epoch'], meter_second_psnr.value())
+    train_second_ssim_logger.log(state['epoch'], meter_second_ssim.value())
     results['train_loss'].append(meter_loss.value()[0])
-    results['train_psnr'].append(meter_psnr.value())
-    results['train_ssim'].append(meter_ssim.value())
+    results['train_first_psnr'].append(meter_first_psnr.value())
+    results['train_first_ssim'].append(meter_first_ssim.value())
+    results['train_second_psnr'].append(meter_second_psnr.value())
+    results['train_second_ssim'].append(meter_second_ssim.value())
 
     # save best model
-    global best_psnr, best_ssim
-    if meter_psnr.value() > best_psnr and meter_ssim.value() > best_ssim:
+    global best_first_psnr, best_first_ssim, best_second_psnr, best_second_ssim
+    if meter_first_psnr.value() > best_first_psnr and meter_first_ssim.value() > best_first_ssim and meter_second_psnr.value() > best_second_psnr and meter_second_ssim.value() > best_second_ssim:
         torch.save(model.state_dict(), 'epochs/model.pth')
-        best_psnr, best_ssim = meter_psnr.value(), meter_ssim.value()
+        best_first_psnr, best_first_ssim, best_second_psnr, best_second_ssim = meter_first_psnr.value(), meter_first_ssim.value(), meter_second_psnr.value(), meter_second_ssim.value()
 
     reset_meters()
 
-    engine.test(processor, test_real_loader)
+    with torch.no_grad():
+        engine.test(processor, test_loader)
 
-    test_real_loss_logger.log(state['epoch'], meter_loss.value()[0])
-    test_real_psnr_logger.log(state['epoch'], meter_psnr.value())
-    test_real_ssim_logger.log(state['epoch'], meter_ssim.value())
-    results['test_real_loss'].append(meter_loss.value()[0])
-    results['test_real_psnr'].append(meter_psnr.value())
-    results['test_real_ssim'].append(meter_ssim.value())
+    test_loss_logger.log(state['epoch'], meter_loss.value()[0])
+    test_first_psnr_logger.log(state['epoch'], meter_first_psnr.value())
+    test_first_ssim_logger.log(state['epoch'], meter_first_ssim.value())
+    test_second_psnr_logger.log(state['epoch'], meter_second_psnr.value())
+    test_second_ssim_logger.log(state['epoch'], meter_second_ssim.value())
+    results['test_loss'].append(meter_loss.value()[0])
+    results['test_first_psnr'].append(meter_first_psnr.value())
+    results['test_first_ssim'].append(meter_first_ssim.value())
+    results['test_second_psnr'].append(meter_second_psnr.value())
+    results['test_second_ssim'].append(meter_second_ssim.value())
 
-    print('[Epoch %d] Testing Real Loss: %.4f Testing Real PSNR: %.4f dB Testing Real SSIM: %.4f' % (
-        state['epoch'], meter_loss.value()[0], meter_psnr.value(), meter_ssim.value()))
-
-    reset_meters()
-
-    engine.test(processor, test_synthetic_loader)
-
-    test_synthetic_loss_logger.log(state['epoch'], meter_loss.value()[0])
-    test_synthetic_psnr_logger.log(state['epoch'], meter_psnr.value())
-    test_synthetic_ssim_logger.log(state['epoch'], meter_ssim.value())
-    results['test_synthetic_loss'].append(meter_loss.value()[0])
-    results['test_synthetic_psnr'].append(meter_psnr.value())
-    results['test_synthetic_ssim'].append(meter_ssim.value())
-
-    print('[Epoch %d] Testing Synthetic Loss: %.4f Testing Synthetic PSNR: %.4f dB Testing Synthetic SSIM: %.4f' % (
-        state['epoch'], meter_loss.value()[0], meter_psnr.value(), meter_ssim.value()))
+    print('[Epoch %d] Testing Loss: %.4f Testing First PSNR: %.4f dB Testing First SSIM: %.4f Testing Second PSNR:'
+          ' %.4f dB Testing Second SSIM: %.4f' % (state['epoch'], meter_loss.value()[0], meter_first_psnr.value(),
+                                                  meter_first_ssim.value(), meter_second_psnr.value(),
+                                                  meter_second_ssim.value()))
 
     # save statistics at every 10 epochs
     if state['epoch'] % 10 == 0:
-        data_frame = pd.DataFrame(data={'train_loss': results['train_loss'], 'train_psnr': results['train_psnr'],
-                                        'train_ssim': results['train_ssim'],
-                                        'test_real_loss': results['test_real_loss'],
-                                        'test_real_psnr': results['test_real_psnr'],
-                                        'test_real_ssim': results['test_real_ssim'],
-                                        'test_synthetic_loss': results['test_synthetic_loss'],
-                                        'test_synthetic_psnr': results['test_synthetic_psnr'],
-                                        'test_synthetic_ssim': results['test_synthetic_ssim']},
+        data_frame = pd.DataFrame(data={'train_loss': results['train_loss'],
+                                        'train_first_psnr': results['train_first_psnr'],
+                                        'train_first_ssim': results['train_first_ssim'],
+                                        'train_second_psnr': results['train_second_psnr'],
+                                        'train_second_ssim': results['train_second_ssim'],
+                                        'test_loss': results['test_loss'],
+                                        'test_first_psnr': results['test_first_psnr'],
+                                        'test_first_ssim': results['test_first_ssim'],
+                                        'test_second_psnr': results['test_second_psnr'],
+                                        'test_second_ssim': results['test_second_ssim']},
                                   index=range(1, state['epoch'] + 1))
         data_frame.to_csv('statistics/results.csv', index_label='epoch')
 
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Train Reflection Removal Model')
+    parser = argparse.ArgumentParser(description='Train Mixed Image Separation Model')
     parser.add_argument('--crop_size', default=224, type=int, help='image crop size')
     parser.add_argument('--batch_size', default=4, type=int, help='train batch size')
     parser.add_argument('--num_epochs', default=100, type=int, help='train epoch number')
@@ -119,21 +126,16 @@ if __name__ == '__main__':
     TRAIN_PATH = opt.train_path
     TEST_PATH = opt.test_path
 
-    results = {'train_loss': [], 'train_psnr': [], 'train_ssim': [], 'test_real_loss': [], 'test_real_psnr': [],
-               'test_real_ssim': [], 'test_synthetic_loss': [], 'test_synthetic_psnr': [], 'test_synthetic_ssim': []}
+    results = {'train_loss': [], 'train_first_psnr': [], 'train_first_ssim': [], 'train_second_psnr': [],
+               'train_second_ssim': [], 'test_loss': [], 'test_first_psnr': [], 'test_first_ssim': [],
+               'test_second_psnr': [], 'test_second_ssim': []}
     # record current best measures
-    best_psnr, best_ssim = 0, 0
+    best_first_psnr, best_first_ssim, best_second_psnr, best_second_ssim = 0, 0, 0, 0
 
-    # train_real_set = TrainDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE, data_type='real')
-    # train_synthetic_set = TrainDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE, data_type='synthetic')
-    # train_set = ConcatDataset([train_real_set, train_synthetic_set])
-    train_set = TrainDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE, data_type='real')
-    test_real_set = TestDatasetFromFolder(TEST_PATH, crop_size=512, data_type='real')
-    test_synthetic_set = TestDatasetFromFolder(TEST_PATH, crop_size=224, data_type='synthetic')
-    # don't use num_workers! it will report CUDA error
-    train_loader = DataLoader(dataset=train_set, batch_size=BATCH_SIZE, shuffle=True)
-    test_real_loader = DataLoader(dataset=test_real_set, batch_size=1, shuffle=False)
-    test_synthetic_loader = DataLoader(dataset=test_synthetic_set, batch_size=1, shuffle=False)
+    train_set = DatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE, data_type='train')
+    test_set = DatasetFromFolder(TEST_PATH, crop_size=224, data_type='test')
+    train_loader = DataLoader(dataset=train_set, batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
+    test_loader = DataLoader(dataset=test_set, batch_size=1, shuffle=False, num_workers=4)
 
     model = Model()
     loss_criterion = TotalLoss()
@@ -145,16 +147,18 @@ if __name__ == '__main__':
     optimizer = Adam(model.parameters())
 
     engine = Engine()
-    meter_loss, meter_psnr, meter_ssim = tnt.meter.AverageValueMeter(), PSNRValueMeter(), SSIMValueMeter()
+    meter_loss, meter_first_psnr, meter_first_ssim = tnt.meter.AverageValueMeter(), PSNRValueMeter(), SSIMValueMeter()
+    meter_second_psnr, meter_second_ssim = PSNRValueMeter(), SSIMValueMeter()
     train_loss_logger = VisdomPlotLogger('line', opts={'title': 'Train Loss'})
-    test_real_loss_logger = VisdomPlotLogger('line', opts={'title': 'Test Real Loss'})
-    test_synthetic_loss_logger = VisdomPlotLogger('line', opts={'title': 'Test Synthetic Loss'})
-    train_psnr_logger = VisdomPlotLogger('line', opts={'title': 'Train PSNR'})
-    test_real_psnr_logger = VisdomPlotLogger('line', opts={'title': 'Test Real PSNR'})
-    test_synthetic_psnr_logger = VisdomPlotLogger('line', opts={'title': 'Test Synthetic PSNR'})
-    train_ssim_logger = VisdomPlotLogger('line', opts={'title': 'Train SSIM'})
-    test_real_ssim_logger = VisdomPlotLogger('line', opts={'title': 'Test Real SSIM'})
-    test_synthetic_ssim_logger = VisdomPlotLogger('line', opts={'title': 'Test Synthetic SSIM'})
+    test_loss_logger = VisdomPlotLogger('line', opts={'title': 'Test Loss'})
+    train_first_psnr_logger = VisdomPlotLogger('line', opts={'title': 'Train First PSNR'})
+    test_first_psnr_logger = VisdomPlotLogger('line', opts={'title': 'Test First PSNR'})
+    train_first_ssim_logger = VisdomPlotLogger('line', opts={'title': 'Train First SSIM'})
+    test_first_ssim_logger = VisdomPlotLogger('line', opts={'title': 'Test First SSIM'})
+    train_second_psnr_logger = VisdomPlotLogger('line', opts={'title': 'Train Second PSNR'})
+    test_second_psnr_logger = VisdomPlotLogger('line', opts={'title': 'Test Second PSNR'})
+    train_second_ssim_logger = VisdomPlotLogger('line', opts={'title': 'Train Second SSIM'})
+    test_second_ssim_logger = VisdomPlotLogger('line', opts={'title': 'Test Second SSIM'})
 
     engine.hooks['on_sample'] = on_sample
     engine.hooks['on_forward'] = on_forward
