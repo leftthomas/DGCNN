@@ -68,11 +68,8 @@ def on_end_epoch(state):
     fold_results['test_loss'].append(meter_loss.value()[0])
     fold_results['test_accuracy'].append(meter_accuracy.value()[0])
 
-    # save best model at every fold
-    global best_accuracy
-    if meter_accuracy.value()[0] > best_accuracy:
-        torch.save(model.state_dict(), 'epochs/%s_%d.pth' % (DATA_TYPE, fold_number))
-        best_accuracy = meter_accuracy.value()[0]
+    # save model at every fold
+    torch.save(model.state_dict(), 'epochs/%s_%d.pth' % (DATA_TYPE, fold_number))
 
 
 if __name__ == '__main__':
@@ -95,8 +92,6 @@ if __name__ == '__main__':
     print('# ', data_set, ':', '[FEATURES] -', NUM_FEATURES, '[NUM_CLASSES] -', NUM_CLASSES)
 
     over_results = {'train_accuracy': [], 'test_accuracy': []}
-    # record current best measures
-    best_accuracy = 0
 
     model = Model(NUM_FEATURES, NUM_CLASSES)
     loss_criterion = nn.CrossEntropyLoss()
@@ -143,15 +138,13 @@ if __name__ == '__main__':
             index=range(1, NUM_EPOCHS + 1))
         fold_data_frame.to_csv('statistics/%s_results_%d.csv' % (DATA_TYPE, fold_number), index_label='epoch')
 
-        over_results['train_accuracy'].append(np.array(fold_results['train_accuracy']).max())
-        over_results['test_accuracy'].append(np.array(fold_results['test_accuracy']).max())
+        over_results['train_accuracy'].append(fold_results['train_accuracy'][-1])
+        over_results['test_accuracy'].append(fold_results['test_accuracy'][-1])
 
         train_iter.set_description('[Fold %d] Training Accuracy: %.2f%% Testing Accuracy: %.2f%%' % (
-            fold_number, np.array(fold_results['train_accuracy']).max(), np.array(fold_results['test_accuracy']).max()))
+            fold_number, fold_results['train_accuracy'][-1], fold_results['test_accuracy'][-1]))
 
         fold_number += 1
-        # reset them for each fold
-        best_accuracy = 0
         model = Model(NUM_FEATURES, NUM_CLASSES)
         if torch.cuda.is_available():
             model = model.to('cuda')
