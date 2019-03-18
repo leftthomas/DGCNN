@@ -116,10 +116,10 @@ if __name__ == '__main__':
     train_iter = tqdm(range(1, 11), desc='Training Model......')
     for fold_number in train_iter:
         # 90/10 train/test split
-        train_idxes = np.loadtxt('data/%s/10fold_idx/train_idx-%d.txt' % (DATA_TYPE, fold_number),
-                                 dtype=np.int32).tolist()
-        test_idxes = np.loadtxt('data/%s/10fold_idx/test_idx-%d.txt' % (DATA_TYPE, fold_number),
-                                dtype=np.int32).tolist()
+        train_idxes = torch.from_numpy(np.loadtxt('data/%s/10fold_idx/train_idx-%d.txt' % (DATA_TYPE, fold_number),
+                                                  dtype=np.int32))
+        test_idxes = torch.from_numpy(np.loadtxt('data/%s/10fold_idx/test_idx-%d.txt' % (DATA_TYPE, fold_number),
+                                                 dtype=np.int32))
         train_set, test_set = data_set[train_idxes], data_set[test_idxes]
         train_loader = DataLoader(dataset=train_set, batch_size=BATCH_SIZE, shuffle=True)
         test_loader = DataLoader(dataset=test_set, batch_size=BATCH_SIZE, shuffle=False)
