@@ -40,7 +40,7 @@ Visdom now can be accessed by going to `127.0.0.1:8097/env/$data_type` in your b
 Default PyTorch Adam optimizer hyper-parameters were used without learning rate scheduling. 
 The model was trained with 100 epochs and batch size of 20 on a NVIDIA GTX 1070 GPU. 
 
-Here is tiny difference between this code and office paper. **X** is defined as a concatenated matrix of vertex labels、
+Here is tiny difference between this code and official paper. **X** is defined as a concatenated matrix of vertex labels、
 vertex attributes and normalized node degrees.
 
 <table>
@@ -95,23 +95,23 @@ vertex attributes and normalized node degrees.
       <td align="center">Num. of Parameters</td>
       <td align="center">6,851</td>
       <td align="center">7,203</td>
-      <td align="center">6851</td>
-      <td align="center">6851</td>
-      <td align="center">6851</td>
-      <td align="center">6851</td>
-      <td align="center">6851</td>
-      <td align="center">6851</td>
+      <td align="center">6,851</td>
+      <td align="center">6,851</td>
+      <td align="center">6,851</td>
+      <td align="center">6,851</td>
+      <td align="center">6,851</td>
+      <td align="center">6,851</td>
     </tr>
     <tr>
-      <td align="center">DGCNN (offical)</td>
+      <td align="center">DGCNN (official)</td>
       <td align="center"><b>85.83±1.66</b></td>
-      <td align="center"><b>85.83±1.66</b></td>
-      <td align="center"><b>85.83±1.66</b></td>
-      <td align="center"><b>85.83±1.66</b></td>
-      <td align="center"><b>85.83±1.66</b></td>
-      <td align="center"><b>85.83±1.66</b></td>
-      <td align="center"><b>85.83±1.66</b></td>
-      <td align="center"><b>85.83±1.66</b></td>
+      <td align="center"><b>58.59±2.47</b></td>
+      <td align="center"><b>74.44±0.47</b></td>
+      <td align="center"><b>75.54±0.94</b></td>
+      <td align="center"><b>79.37±0.94</b></td>
+      <td align="center"><b>73.76±0.49</b></td>
+      <td align="center"><b>70.03±0.86</b></td>
+      <td align="center"><b>47.83±0.85</b></td>
     </tr>
     <tr>
       <td align="center">DGCNN (ours)</td>
