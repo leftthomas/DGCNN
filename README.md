@@ -1,9 +1,9 @@
-# RRCapsNet
-A PyTorch implementation of Convolutional Capsule Network based on the paper [Convolutional Capsule Network For Mixed Image Separation]().
+# DGCNN
+A PyTorch implementation of DGCNN based on AAAI 2018 paper [An End-to-End Deep Learning Architecture for Graph Classification](https://www.cse.wustl.edu/~muhan/papers/AAAI_2018_DGCNN.pdf).
 
 ## Requirements
 - [Anaconda](https://www.anaconda.com/download/)
-- PyTorch
+- [PyTorch](https://pytorch.org)
 ```
 conda install pytorch torchvision -c pytorch
 ```
@@ -11,42 +11,22 @@ conda install pytorch torchvision -c pytorch
 ```
 pip install git+https://github.com/pytorch/tnt.git@master
 ```
-- CapsuleLayer
+* [PyTorch Geometric](https://rusty1s.github.io/pytorch_geometric/build/html/index.html)
 ```
-pip install git+https://github.com/leftthomas/CapsuleLayer.git@master
+pip install torch-geometric
 ```
 
 ## Datasets
-
-The datasets are collected from [perceptual-reflection-removal](https://github.com/ceciliavision/perceptual-reflection-removal)
-and [CEILNet](https://github.com/fqnchina/CEILNet).
-Download the datasets from [BaiduYun](https://pan.baidu.com/s/1PJuEvmFdpuJIZwtNU6NgtQ) 
-or [GoogleDrive](https://drive.google.com/open?id=1abYah24PZKQS8K9G3Xsd_6a8Raptp30a), and extract them into `data` directory.
+The datasets are collected from [graph kernel datasets](https://ls11-www.cs.tu-dortmund.de/staff/morris/graphkerneldatasets).
+The code will download and extract them into `data` directory automatically.
 
 ## Usage
-
 ### Train Model
 ```
-python -m visdom.server -logging_level ERROR & python train.py
-
+python -m visdom.server -logging_level WARNING & python train.py --data_type PTC_MR --num_epochs 200
 optional arguments:
---crop_size                   image crop size [default value is 224]
---batch_size                  train batch size [default value is 4]
---num_epochs                  train epoch number [default value is 100]
---train_path                  train image data path [default value is 'data/train']
---test_path                   test image data path [default value is 'data/test']
+--data_type                   dataset type [default value is 'DD'](choices:['DD', 'PTC_MR', 'NCI1', 'PROTEINS', 'IMDB-BINARY', 'IMDB-MULTI', 'MUTAG', 'COLLAB'])
+--batch_size                  train batch size [default value is 20]
+--num_epochs                  train epochs number [default value is 100]
 ```
-Visdom now can be accessed by going to `127.0.0.1:8097/` in your browser. If you want to interrupt 
-this process, just type `ps aux | grep visdom` to find the `PID`, then `kill PID`.
-
-### Test Single Image
-```
-python vis.py  --mixed_name test_images/mixed_1_2.jpg
-
-optional arguments:
---mixed_name                  test mixed image name
---crop_size                   image crop size [default value is None]
---model_name                  mixed image separation model name [default value is 'model.pth']
---test_mode                   using GPU or CPU [default value is 'GPU'](choices:['GPU', 'CPU'])
-```
-The separated images are on `results` directory.
+Visdom now can be accessed by going to `127.0.0.1:8097/env/$data_type` in your browser, `$data_type` means the dataset type which you are training.
