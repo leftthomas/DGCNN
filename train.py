@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import torch
 import torchnet as tnt
-from sklearn.model_selection import RepeatedStratifiedKFold
 from torch import nn
 from torch.optim import Adam
 from torch_geometric.data import DataLoader
@@ -113,15 +112,15 @@ if __name__ == '__main__':
     engine.hooks['on_start_epoch'] = on_start_epoch
     engine.hooks['on_end_epoch'] = on_end_epoch
 
-    # create a 10 times 10-fold cross validation
-    rskf = RepeatedStratifiedKFold(n_splits=10, n_repeats=10)
-    fold_number = 1
-    train_iter = tqdm(rskf.split(data_set, data_set.data.y), desc='Training Model......')
-    for train_index, test_index in train_iter:
+    # create a 10-fold cross validation
+    train_iter = tqdm(range(1, 11), desc='Training Model......')
+    for fold_number in train_iter:
         # 90/10 train/test split
-        train_index = torch.zeros(len(data_set)).index_fill(0, torch.as_tensor(train_index), 1).byte()
-        test_index = torch.zeros(len(data_set)).index_fill(0, torch.as_tensor(test_index), 1).byte()
-        train_set, test_set = data_set[train_index], data_set[test_index]
+        train_idxes = np.loadtxt('data/%s/10fold_idx/train_idx-%d.txt' % (DATA_TYPE, fold_number),
+                                 dtype=np.int32).tolist()
+        test_idxes = np.loadtxt('data/%s/10fold_idx/test_idx-%d.txt' % (DATA_TYPE, fold_number),
+                                dtype=np.int32).tolist()
+        train_set, test_set = data_set[train_idxes], data_set[test_idxes]
         train_loader = DataLoader(dataset=train_set, batch_size=BATCH_SIZE, shuffle=True)
         test_loader = DataLoader(dataset=test_set, batch_size=BATCH_SIZE, shuffle=False)
 
@@ -144,15 +143,14 @@ if __name__ == '__main__':
         train_iter.set_description('[Fold %d] Training Accuracy: %.2f%% Testing Accuracy: %.2f%%' % (
             fold_number, fold_results['train_accuracy'][-1], fold_results['test_accuracy'][-1]))
 
-        fold_number += 1
         model = Model(NUM_FEATURES, NUM_CLASSES)
         if torch.cuda.is_available():
             model = model.to('cuda')
 
-    # save statistics at all fold
+    # save statistics at all folds
     data_frame = pd.DataFrame(
         data={'train_accuracy': over_results['train_accuracy'], 'test_accuracy': over_results['test_accuracy']},
-        index=range(1, fold_number))
+        index=range(1, 11))
     data_frame.to_csv('statistics/%s_results_overall.csv' % DATA_TYPE, index_label='fold')
 
     print('Overall Training Accuracy: %.2f%% (std: %.2f) Testing Accuracy: %.2f%% (std: %.2f)' %
