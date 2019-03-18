@@ -1,5 +1,6 @@
 # DGCNN
-A PyTorch implementation of DGCNN based on AAAI 2018 paper [An End-to-End Deep Learning Architecture for Graph Classification](https://www.cse.wustl.edu/~muhan/papers/AAAI_2018_DGCNN.pdf).
+A PyTorch implementation of DGCNN based on AAAI 2018 paper 
+[An End-to-End Deep Learning Architecture for Graph Classification](https://www.cse.wustl.edu/~muhan/papers/AAAI_2018_DGCNN.pdf).
 
 ## Requirements
 - [Anaconda](https://www.anaconda.com/download/)
@@ -36,6 +37,12 @@ optional arguments:
 Visdom now can be accessed by going to `127.0.0.1:8097/env/$data_type` in your browser, `$data_type` means the dataset type which you are training.
 
 ## Benchmarks
+Default PyTorch Adam optimizer hyper-parameters were used without learning rate scheduling. 
+The model was trained with 100 epochs and batch size of 20 on a NVIDIA GTX 1070 GPU. 
+
+Here is tiny difference between this code and office paper. **X** is defined as a concatenated matrix of vertex labels、
+vertex attributes and normalized node degrees.
+
 <table>
   <thead>
     <tr>
