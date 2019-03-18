@@ -116,7 +116,7 @@ vertex attributes and normalized node degrees. Secondly, **CrossEntropyLoss** is
     <tr>
       <td align="center">DGCNN (ours)</td>
       <td align="center">83.42±6.78</td>
-      <td align="center">83.41±8.47</td>
+      <td align="center">58.43±7.07</td>
       <td align="center">83.41±8.47</td>
       <td align="center">83.41±8.47</td>
       <td align="center">83.41±8.47</td>
@@ -127,7 +127,7 @@ vertex attributes and normalized node degrees. Secondly, **CrossEntropyLoss** is
     <tr>
       <td align="center">Training Time</td>
       <td align="center">4.49s</td>
-      <td align="center">19</td>
+      <td align="center">6.83s</td>
       <td align="center">8</td>
       <td align="center">8</td>
       <td align="center">8</td>
@@ -144,7 +144,7 @@ The train loss、accuracy, test loss、accuracy are showed on visdom.
 ### MUTAG
 ![result](results/mutag.png)
 ### PTC
-![result](results/mutag.png)
+![result](results/ptc.png)
 ### NCI1
 ![result](results/mutag.png)
 ### PROTEINS
