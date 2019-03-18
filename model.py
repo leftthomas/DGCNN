@@ -16,8 +16,9 @@ class Model(nn.Module):
         self.conv5 = Conv1d(1, 16, 97, 97)
         self.conv6 = Conv1d(16, 32, 5, 1)
         self.pool = MaxPool1d(2, 2)
-        self.classifier = Linear(128, num_classes)
+        self.classifier_1 = Linear(352, 128)
         self.drop_out = Dropout(0.5)
+        self.classifier_2 = Linear(128, num_classes)
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, data):
@@ -28,13 +29,14 @@ class Model(nn.Module):
         x_3 = torch.tanh(self.conv3(x_2, edge_index))
         x_4 = torch.tanh(self.conv4(x_3, edge_index))
         x = torch.cat([x_1, x_2, x_3, x_4], dim=-1)
-        x = global_sort_pool(x, batch, k=16)
+        x = global_sort_pool(x, batch, k=30)
         x = x.view(x.size(0), 1, x.size(-1))
         x = self.relu(self.conv5(x))
         x = self.pool(x)
         x = self.relu(self.conv6(x))
         x = x.view(x.size(0), -1)
-        out = F.softmax(self.classifier(x), dim=-1)
-        classes = self.drop_out(out)
+        out = self.relu(self.classifier_1(x))
+        out = self.drop_out(out)
+        classes = F.softmax(self.classifier_2(out), dim=-1)
 
         return classes

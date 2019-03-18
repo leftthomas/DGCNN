@@ -31,17 +31,17 @@ The code will download and extract them into `data` directory automatically.
 python -m visdom.server -logging_level WARNING & python train.py --data_type PTC_MR --num_epochs 200
 optional arguments:
 --data_type                   dataset type [default value is 'DD'](choices:['DD', 'PTC_MR', 'NCI1', 'PROTEINS', 'IMDB-BINARY', 'IMDB-MULTI', 'MUTAG', 'COLLAB'])
---batch_size                  train batch size [default value is 20]
+--batch_size                  train batch size [default value is 50]
 --num_epochs                  train epochs number [default value is 100]
 ```
 Visdom now can be accessed by going to `127.0.0.1:8097/env/$data_type` in your browser, `$data_type` means the dataset type which you are training.
 
 ## Benchmarks
 Default PyTorch Adam optimizer hyper-parameters were used without learning rate scheduling. 
-The model was trained with 100 epochs and batch size of 20 on a NVIDIA GTX 1070 GPU. 
+The model was trained with 100 epochs and batch size of 50 on a NVIDIA GTX 1070 GPU. 
 
-Here is tiny difference between this code and official paper. **X** is defined as a concatenated matrix of vertex labels、
-vertex attributes and normalized node degrees.
+Here are tiny differences between this code and official paper. Firstly, **X** is defined as a concatenated matrix of vertex labels、
+vertex attributes and normalized node degrees. Secondly, **CrossEntropyLoss** is used to compute the loss. 
 
 <table>
   <thead>

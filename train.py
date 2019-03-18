@@ -16,10 +16,10 @@ from tqdm import tqdm
 from model import Model
 from utils import Indegree
 
-torch.manual_seed(0)
+torch.manual_seed(1)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
-np.random.seed(0)
+np.random.seed(1)
 
 
 def processor(sample):
@@ -78,7 +78,7 @@ if __name__ == '__main__':
     parser.add_argument('--data_type', default='DD', type=str,
                         choices=['DD', 'PTC_MR', 'NCI1', 'PROTEINS', 'IMDB-BINARY', 'IMDB-MULTI', 'MUTAG', 'COLLAB'],
                         help='dataset type')
-    parser.add_argument('--batch_size', default=20, type=int, help='train batch size')
+    parser.add_argument('--batch_size', default=50, type=int, help='train batch size')
     parser.add_argument('--num_epochs', default=100, type=int, help='train epochs number')
 
     opt = parser.parse_args()
