@@ -93,7 +93,7 @@ vertex attributes and normalized node degrees. Secondly, **CrossEntropyLoss** is
     </tr>
     <tr>
       <td align="center">Num. of Parameters</td>
-      <td align="center">6,851</td>
+      <td align="center">52,035</td>
       <td align="center">7,203</td>
       <td align="center">6,851</td>
       <td align="center">6,851</td>
@@ -115,6 +115,7 @@ vertex attributes and normalized node degrees. Secondly, **CrossEntropyLoss** is
     </tr>
     <tr>
       <td align="center">DGCNN (ours)</td>
+      <td align="center">83.42±6.78</td>
       <td align="center">83.41±8.47</td>
       <td align="center">83.41±8.47</td>
       <td align="center">83.41±8.47</td>
@@ -122,7 +123,17 @@ vertex attributes and normalized node degrees. Secondly, **CrossEntropyLoss** is
       <td align="center">83.41±8.47</td>
       <td align="center">83.41±8.47</td>
       <td align="center">83.41±8.47</td>
-      <td align="center">83.41±8.47</td>
+    </tr>
+    <tr>
+      <td align="center">Training Time</td>
+      <td align="center">4.49s</td>
+      <td align="center">19</td>
+      <td align="center">8</td>
+      <td align="center">8</td>
+      <td align="center">8</td>
+      <td align="center">8</td>
+      <td align="center">8</td>
+      <td align="center">8</td>
     </tr> 
   </tbody>
 </table>
