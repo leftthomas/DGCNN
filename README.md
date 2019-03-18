@@ -86,8 +86,8 @@ vertex attributes and normalized node degrees. Secondly, **CrossEntropyLoss** is
       <td align="center">8</td>
       <td align="center">19</td>
       <td align="center">38</td>
-      <td align="center">8</td>
-      <td align="center">8</td>
+      <td align="center">5</td>
+      <td align="center">90</td>
       <td align="center">8</td>
       <td align="center">8</td>
       <td align="center">8</td>
@@ -97,8 +97,8 @@ vertex attributes and normalized node degrees. Secondly, **CrossEntropyLoss** is
       <td align="center">52,035</td>
       <td align="center">52,387</td>
       <td align="center">52,995</td>
-      <td align="center">6,851</td>
-      <td align="center">6,851</td>
+      <td align="center">51,939</td>
+      <td align="center">54,659</td>
       <td align="center">6,851</td>
       <td align="center">6,851</td>
       <td align="center">6,851</td>
@@ -116,22 +116,22 @@ vertex attributes and normalized node degrees. Secondly, **CrossEntropyLoss** is
     </tr>
     <tr>
       <td align="center">DGCNN (ours)</td>
-      <td align="center">83.42±6.78</td>
-      <td align="center">58.43±7.07</td>
-      <td align="center">83.41±8.47</td>
-      <td align="center">83.41±8.47</td>
-      <td align="center">83.41±8.47</td>
+      <td align="center">82.22±10.18</td>
+      <td align="center">62.94±8.24</td>
+      <td align="center">74.40±2.07</td>
+      <td align="center">72.52±3.72</td>
+      <td align="center">69.83±4.08</td>
       <td align="center">83.41±8.47</td>
       <td align="center">83.41±8.47</td>
       <td align="center">83.41±8.47</td>
     </tr>
     <tr>
       <td align="center">Training Time</td>
-      <td align="center">4.49s</td>
-      <td align="center">6.83s</td>
-      <td align="center">8</td>
-      <td align="center">8</td>
-      <td align="center">8</td>
+      <td align="center">4.51s</td>
+      <td align="center">6.88s</td>
+      <td align="center">61.63s</td>
+      <td align="center">21.20s</td>
+      <td align="center">64.98s</td>
       <td align="center">8</td>
       <td align="center">8</td>
       <td align="center">8</td>
@@ -147,14 +147,14 @@ The train loss、accuracy, test loss、accuracy are showed on visdom.
 ### PTC
 ![result](results/ptc.png)
 ### NCI1
-![result](results/mutag.png)
+![result](results/nci1.png)
 ### PROTEINS
-![result](results/mutag.png)
+![result](results/proteins.png)
 ### D&D
-![result](results/mutag.png)
+![result](results/dd.png)
 ### COLLAB
-![result](results/mutag.png)
+![result](results/collab.png)
 ### IMDB-B
-![result](results/mutag.png)
+![result](results/imdbb.png)
 ### IMDB-M
-![result](results/mutag.png)
+![result](results/imdbm.png)
