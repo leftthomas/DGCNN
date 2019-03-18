@@ -5,6 +5,7 @@ import pandas as pd
 import torch
 import torchnet as tnt
 from sklearn.model_selection import RepeatedStratifiedKFold
+from torch import nn
 from torch.optim import Adam
 from torch_geometric.data import DataLoader
 from torch_geometric.datasets import TUDataset
@@ -13,7 +14,7 @@ from torchnet.logger import VisdomPlotLogger
 from tqdm import tqdm
 
 from model import Model
-from utils import MarginLoss, Indegree
+from utils import Indegree
 
 torch.manual_seed(0)
 torch.backends.cudnn.deterministic = True
@@ -23,15 +24,14 @@ np.random.seed(0)
 
 def processor(sample):
     data, training = sample
-    labels = torch.eye(NUM_CLASSES).index_select(dim=0, index=data.y)
 
     if torch.cuda.is_available():
-        data, labels = data.to('cuda'), labels.to('cuda')
+        data = data.to('cuda')
 
     model.train(training)
 
     classes = model(data)
-    loss = loss_criterion(classes, labels)
+    loss = loss_criterion(classes, data.y)
     return loss, classes
 
 
@@ -79,32 +79,29 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Train Model')
     parser.add_argument('--data_type', default='DD', type=str,
-                        choices=['DD', 'REDDIT-BINARY', 'REDDIT-MULTI-5K', 'REDDIT-MULTI-12K', 'PTC_MR', 'NCI1',
-                                 'NCI109', 'PROTEINS', 'IMDB-BINARY', 'IMDB-MULTI', 'MUTAG', 'ENZYMES', 'COLLAB'],
+                        choices=['DD', 'PTC_MR', 'NCI1', 'PROTEINS', 'IMDB-BINARY', 'IMDB-MULTI', 'MUTAG', 'COLLAB'],
                         help='dataset type')
-    parser.add_argument('--num_iterations', default=3, type=int, help='routing iterations number')
     parser.add_argument('--batch_size', default=20, type=int, help='train batch size')
     parser.add_argument('--num_epochs', default=100, type=int, help='train epochs number')
 
     opt = parser.parse_args()
 
     DATA_TYPE = opt.data_type
-    NUM_ITERATIONS = opt.num_iterations
     BATCH_SIZE = opt.batch_size
     NUM_EPOCHS = opt.num_epochs
 
     data_set = TUDataset('data/%s' % DATA_TYPE, DATA_TYPE, pre_transform=Indegree(), use_node_attr=True)
     NUM_FEATURES, NUM_CLASSES = data_set.num_features, data_set.num_classes
+    print(data_set, ': ', '[FEATURES]-', NUM_FEATURES, '[NUM_CLASSES]-', NUM_CLASSES)
 
     over_results = {'train_accuracy': [], 'test_accuracy': []}
     # record current best measures
     best_accuracy = 0
 
-    model = Model(NUM_FEATURES, NUM_CLASSES, NUM_ITERATIONS)
-    loss_criterion = MarginLoss()
+    model = Model(NUM_FEATURES, NUM_CLASSES)
+    loss_criterion = nn.CrossEntropyLoss()
     if torch.cuda.is_available():
         model = model.to('cuda')
-        loss_criterion = loss_criterion.to('cuda')
 
     print('# model parameters:', sum(param.numel() for param in model.parameters()))
 
@@ -155,7 +152,7 @@ if __name__ == '__main__':
         fold_number += 1
         # reset them for each fold
         best_accuracy = 0
-        model = Model(NUM_FEATURES, NUM_CLASSES, NUM_ITERATIONS)
+        model = Model(NUM_FEATURES, NUM_CLASSES)
         if torch.cuda.is_available():
             model = model.to('cuda')
 
