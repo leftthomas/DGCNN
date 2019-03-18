@@ -89,7 +89,7 @@ if __name__ == '__main__':
 
     data_set = TUDataset('data/%s' % DATA_TYPE, DATA_TYPE, pre_transform=Indegree(), use_node_attr=True)
     NUM_FEATURES, NUM_CLASSES = data_set.num_features, data_set.num_classes
-    print('# ', data_set, ':', '[FEATURES] -', NUM_FEATURES, '[NUM_CLASSES] -', NUM_CLASSES)
+    print('# %s: [FEATURES]-%d [NUM_CLASSES]-%d' % (data_set, NUM_FEATURES, NUM_CLASSES))
 
     over_results = {'train_accuracy': [], 'test_accuracy': []}
 
