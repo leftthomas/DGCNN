@@ -23,7 +23,8 @@ pip install torch-geometric
 
 ## Datasets
 The datasets are collected from [graph kernel datasets](https://ls11-www.cs.tu-dortmund.de/staff/morris/graphkerneldatasets).
-The code will download and extract them into `data` directory automatically.
+The code will download and extract them into `data` directory automatically. The `10fold_idx` files are collected from 
+[pytorch_DGCNN](https://github.com/muhanzhang/pytorch_DGCNN).
 
 ## Usage
 ### Train Model
