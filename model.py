@@ -1,5 +1,5 @@
 import torch
-import torch.functional as F
+import torch.nn.functional as F
 from torch import nn
 from torch.nn import Conv1d, MaxPool1d, Linear, Dropout
 from torch_geometric.nn import GCNConv, global_sort_pool
