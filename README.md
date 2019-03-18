@@ -34,3 +34,88 @@ optional arguments:
 --num_epochs                  train epochs number [default value is 100]
 ```
 Visdom now can be accessed by going to `127.0.0.1:8097/env/$data_type` in your browser, `$data_type` means the dataset type which you are training.
+
+## Benchmarks
+<table>
+  <thead>
+    <tr>
+      <th>Dataset</th>
+      <th>MUTAG</th>
+      <th>PTC</th>
+      <th>NCI1</th>
+      <th>PROTEINS</th>
+      <th>D&D</th>
+      <th>COLLAB</th>
+      <th>IMDB-B</th>
+      <th>IMDB-M</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">Num. of Graphs</td>
+      <td align="center">188</td>
+      <td align="center">344</td>
+      <td align="center">4,110</td>
+      <td align="center">1,113</td>
+      <td align="center">1,178</td>
+      <td align="center">5,000</td>
+      <td align="center">1,000</td>
+      <td align="center">1,500</td>
+    </tr>
+    <tr>
+      <td align="center">Num. of Classes</td>
+      <td align="center">2</td>
+      <td align="center">2</td>
+      <td align="center">2</td>
+      <td align="center">2</td>
+      <td align="center">2</td>
+      <td align="center">3</td>
+      <td align="center">2</td>
+      <td align="center">3</td>
+    </tr>
+    <tr>
+      <td align="center">Node Attr. (Dim.)</td>
+      <td align="center">8</td>
+      <td align="center">19</td>
+      <td align="center">8</td>
+      <td align="center">8</td>
+      <td align="center">8</td>
+      <td align="center">8</td>
+      <td align="center">8</td>
+      <td align="center">8</td>
+    </tr>
+    <tr>
+      <td align="center">Num. of Parameters</td>
+      <td align="center">6,851</td>
+      <td align="center">7,203</td>
+      <td align="center">6851</td>
+      <td align="center">6851</td>
+      <td align="center">6851</td>
+      <td align="center">6851</td>
+      <td align="center">6851</td>
+      <td align="center">6851</td>
+    </tr>
+    <tr>
+      <td align="center">DGCNN (offical)</td>
+      <td align="center"><b>85.83±1.66</b></td>
+      <td align="center"><b>85.83±1.66</b></td>
+      <td align="center"><b>85.83±1.66</b></td>
+      <td align="center"><b>85.83±1.66</b></td>
+      <td align="center"><b>85.83±1.66</b></td>
+      <td align="center"><b>85.83±1.66</b></td>
+      <td align="center"><b>85.83±1.66</b></td>
+      <td align="center"><b>85.83±1.66</b></td>
+    </tr>
+    <tr>
+      <td align="center">DGCNN (ours)</td>
+      <td align="center">83.41±8.47</td>
+      <td align="center">83.41±8.47</td>
+      <td align="center">83.41±8.47</td>
+      <td align="center">83.41±8.47</td>
+      <td align="center">83.41±8.47</td>
+      <td align="center">83.41±8.47</td>
+      <td align="center">83.41±8.47</td>
+      <td align="center">83.41±8.47</td>
+    </tr> 
+  </tbody>
+</table>
