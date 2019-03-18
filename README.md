@@ -94,7 +94,7 @@ vertex attributes and normalized node degrees. Secondly, **CrossEntropyLoss** is
     <tr>
       <td align="center">Num. of Parameters</td>
       <td align="center">52,035</td>
-      <td align="center">7,203</td>
+      <td align="center">52,387</td>
       <td align="center">6,851</td>
       <td align="center">6,851</td>
       <td align="center">6,851</td>
@@ -137,3 +137,23 @@ vertex attributes and normalized node degrees. Secondly, **CrossEntropyLoss** is
     </tr> 
   </tbody>
 </table>
+
+## Results
+The train loss、accuracy, test loss、accuracy are showed on visdom.
+
+### MUTAG
+![result](results/mutag.png)
+### PTC
+![result](results/mutag.png)
+### NCI1
+![result](results/mutag.png)
+### PROTEINS
+![result](results/mutag.png)
+### D&D
+![result](results/mutag.png)
+### COLLAB
+![result](results/mutag.png)
+### IMDB-B
+![result](results/mutag.png)
+### IMDB-M
+![result](results/mutag.png)
