@@ -84,7 +84,7 @@ vertex attributes and normalized node degrees. Secondly, **CrossEntropyLoss** is
       <td align="center">Node Attr. (Dim.)</td>
       <td align="center">8</td>
       <td align="center">19</td>
-      <td align="center">8</td>
+      <td align="center">38</td>
       <td align="center">8</td>
       <td align="center">8</td>
       <td align="center">8</td>
@@ -95,7 +95,7 @@ vertex attributes and normalized node degrees. Secondly, **CrossEntropyLoss** is
       <td align="center">Num. of Parameters</td>
       <td align="center">52,035</td>
       <td align="center">52,387</td>
-      <td align="center">6,851</td>
+      <td align="center">52,995</td>
       <td align="center">6,851</td>
       <td align="center">6,851</td>
       <td align="center">6,851</td>

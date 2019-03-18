@@ -3,6 +3,7 @@ import torch.nn.functional as F
 from torch import nn
 from torch.nn import Conv1d, MaxPool1d, Linear, Dropout
 from torch_geometric.nn import GCNConv, global_sort_pool
+from torch_geometric.utils import remove_self_loops
 
 
 class Model(nn.Module):
@@ -23,6 +24,7 @@ class Model(nn.Module):
 
     def forward(self, data):
         x, edge_index, batch = data.x, data.edge_index, data.batch
+        edge_index, _ = remove_self_loops(edge_index)
 
         x_1 = torch.tanh(self.conv1(x, edge_index))
         x_2 = torch.tanh(self.conv2(x_1, edge_index))
