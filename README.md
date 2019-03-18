@@ -11,7 +11,7 @@ conda install pytorch torchvision -c pytorch
 ```
 pip install git+https://github.com/pytorch/tnt.git@master
 ```
-* [PyTorch Geometric](https://rusty1s.github.io/pytorch_geometric/build/html/index.html)
+- [PyTorch Geometric](https://rusty1s.github.io/pytorch_geometric/build/html/index.html)
 ```
 pip install torch-scatter
 pip install torch-sparse
