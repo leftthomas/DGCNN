@@ -41,8 +41,8 @@ Visdom now can be accessed by going to `127.0.0.1:8097/env/$data_type` in your b
 Default PyTorch Adam optimizer hyper-parameters were used without learning rate scheduling. 
 The model was trained with 100 epochs and batch size of 50 on a NVIDIA GTX 1070 GPU. 
 
-Here are tiny differences between this code and official paper. Firstly, **X** is defined as a concatenated matrix of vertex labels、
-vertex attributes and normalized node degrees. Secondly, **CrossEntropyLoss** is used to compute the loss. 
+Here is tiny difference between this code and official paper. **X** is defined as a concatenated matrix of vertex labels、
+vertex attributes and normalized node degrees.
 
 <table>
   <thead>
@@ -116,25 +116,25 @@ vertex attributes and normalized node degrees. Secondly, **CrossEntropyLoss** is
     </tr>
     <tr>
       <td align="center">DGCNN (ours)</td>
-      <td align="center">82.22±10.18</td>
-      <td align="center">62.94±8.24</td>
-      <td align="center">74.40±2.07</td>
-      <td align="center">72.52±3.72</td>
-      <td align="center">69.83±4.08</td>
-      <td align="center">68.80±2.33</td>
-      <td align="center">69.90±4.83</td>
-      <td align="center">46.33±3.71</td>
+      <td align="center">81.67±9.64</td>
+      <td align="center">59.12±11.27</td>
+      <td align="center">75.72±3.13</td>
+      <td align="center">72.88±3.38</td>
+      <td align="center">68.80±5.37</td>
+      <td align="center">70.52±2.00</td>
+      <td align="center">71.50±4.48</td>
+      <td align="center">46.47±5.22</td>
     </tr>
     <tr>
       <td align="center">Training Time</td>
-      <td align="center">4.51s</td>
-      <td align="center">6.88s</td>
-      <td align="center">61.63s</td>
-      <td align="center">21.20s</td>
-      <td align="center">64.98s</td>
-      <td align="center">203.35s</td>
-      <td align="center">15.59s</td>
-      <td align="center">22.21s</td>
+      <td align="center">4.48s</td>
+      <td align="center">6.77s</td>
+      <td align="center">61.04s</td>
+      <td align="center">21.15s</td>
+      <td align="center">64.71s</td>
+      <td align="center">202.65s</td>
+      <td align="center">15.55s</td>
+      <td align="center">21.90s</td>
     </tr> 
   </tbody>
 </table>
