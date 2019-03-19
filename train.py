@@ -93,7 +93,7 @@ if __name__ == '__main__':
     over_results = {'train_accuracy': [], 'test_accuracy': []}
 
     model = Model(NUM_FEATURES, NUM_CLASSES)
-    loss_criterion = nn.CrossEntropyLoss()
+    loss_criterion = nn.NLLLoss()
     if torch.cuda.is_available():
         model = model.to('cuda')
 

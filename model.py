@@ -39,6 +39,6 @@ class Model(nn.Module):
         x = x.view(x.size(0), -1)
         out = self.relu(self.classifier_1(x))
         out = self.drop_out(out)
-        classes = F.softmax(self.classifier_2(out), dim=-1)
+        classes = F.log_softmax(self.classifier_2(out), dim=-1)
 
         return classes
