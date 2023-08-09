@@ -3,156 +3,146 @@ import argparse
 import numpy as np
 import pandas as pd
 import torch
-import torchnet as tnt
+import visdom
 from torch import nn
 from torch.optim import Adam
-from torch_geometric.data import DataLoader
+from torch_geometric.loader import DataLoader
 from torch_geometric.datasets import TUDataset
-from torchnet.engine import Engine
-from torchnet.logger import VisdomPlotLogger
 from tqdm import tqdm
 
 from model import Model
 from utils import Indegree
+from set_determ import set_determ
 
-torch.manual_seed(1)
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
-np.random.seed(1)
-
-
-def processor(sample):
-    data, training = sample
-
-    if torch.cuda.is_available():
-        data = data.to('cuda')
-
-    model.train(training)
-
-    classes = model(data)
-    loss = loss_criterion(classes, data.y)
-    return loss, classes
-
-
-def on_sample(state):
-    state['sample'] = state['sample'], state['train']
-
-
-def reset_meters():
-    meter_loss.reset()
-    meter_accuracy.reset()
-
-
-def on_forward(state):
-    meter_loss.add(state['loss'].detach().cpu().item())
-    meter_accuracy.add(state['output'].detach().cpu(), state['sample'][0].y)
-
-
-def on_start_epoch(state):
-    reset_meters()
-
-
-def on_end_epoch(state):
-    train_loss_logger.log(state['epoch'], meter_loss.value()[0], name='fold_' + str(fold_number))
-    train_accuracy_logger.log(state['epoch'], meter_accuracy.value()[0], name='fold_' + str(fold_number))
-    fold_results['train_loss'].append(meter_loss.value()[0])
-    fold_results['train_accuracy'].append(meter_accuracy.value()[0])
-
-    reset_meters()
-    with torch.no_grad():
-        engine.test(processor, test_loader)
-
-    test_loss_logger.log(state['epoch'], meter_loss.value()[0], name='fold_' + str(fold_number))
-    test_accuracy_logger.log(state['epoch'], meter_accuracy.value()[0], name='fold_' + str(fold_number))
-    fold_results['test_loss'].append(meter_loss.value()[0])
-    fold_results['test_accuracy'].append(meter_accuracy.value()[0])
-
-    # save model at every fold
-    torch.save(model.state_dict(), 'epochs/%s_%d.pth' % (DATA_TYPE, fold_number))
-
-
-if __name__ == '__main__':
-
+def get_args():
     parser = argparse.ArgumentParser(description='Train Model')
     parser.add_argument('--data_type', default='DD', type=str,
                         choices=['DD', 'PTC_MR', 'NCI1', 'PROTEINS', 'IMDB-BINARY', 'IMDB-MULTI', 'MUTAG', 'COLLAB'],
                         help='dataset type')
     parser.add_argument('--batch_size', default=50, type=int, help='train batch size')
     parser.add_argument('--num_epochs', default=100, type=int, help='train epochs number')
+    parser.add_argument('--seed', default=324, type=int, help='random seed')
+    return parser.parse_args()
 
-    opt = parser.parse_args()
+def train(dataloader, model, loss_fn, optimizer, device):
+    """Training in one epoch. Return loss and accuracy*100."""
 
-    DATA_TYPE = opt.data_type
-    BATCH_SIZE = opt.batch_size
-    NUM_EPOCHS = opt.num_epochs
+    model.train()
+    num_batches = len(dataloader)
+    num_samples = len(dataloader.dataset)
+    running_loss, correct = 0, 0
 
-    data_set = TUDataset('data/%s' % DATA_TYPE, DATA_TYPE, pre_transform=Indegree(), use_node_attr=True)
-    NUM_FEATURES, NUM_CLASSES = data_set.num_features, data_set.num_classes
-    print('# %s: [FEATURES]-%d [NUM_CLASSES]-%d' % (data_set, NUM_FEATURES, NUM_CLASSES))
+    for sample in dataloader:
+        data, y = sample.to(device), sample.y.to(device)
+        pred = model(data)
+
+        loss = loss_fn(pred, y)
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+
+        running_loss += loss.item()
+        correct += (pred.argmax(dim=1) == y).sum().item()
+
+    return running_loss/num_batches, correct/num_samples*100
+
+def test(dataloader, model, loss_fn, device):
+    """Test in one epoch. Return loss and accuracy*100."""
+
+    model.eval()
+    num_batches = len(dataloader)
+    num_samples = len(dataloader.dataset)
+    running_loss, correct = 0, 0
+
+    with torch.no_grad():
+        for sample in dataloader:
+            data, y = sample.to(device), sample.y.to(device)
+            pred = model(data)
+            loss = loss_fn(pred, y)
+
+            running_loss += loss.item()
+            correct += (pred.argmax(dim=1) == y).sum().item()
+    
+    return running_loss/num_batches, correct/num_samples*100
+
+
+if __name__ == '__main__':
+    
+    # ─── Initialization ───────────────────────────────────────────────────
+
+    opt = get_args()
+    set_determ(opt.seed)
+    device = (
+        "cuda" if torch.cuda.is_available() else 
+        "mps" if torch.backends.mps.is_available() else
+        "cpu"
+    )
+    vis = visdom.Visdom(env=opt.data_type)  # To plot loss and accuracy
+    data_set = TUDataset(
+        f'data/{opt.data_type}',
+        opt.data_type,
+        pre_transform=Indegree(),
+        use_node_attr=True,
+    )
+    print(f'{data_set.num_features=}, {data_set.num_classes=}')
+
+    # ─── 10-fold Cross Validation ─────────────────────────────────────────
 
     over_results = {'train_accuracy': [], 'test_accuracy': []}
-
-    model = Model(NUM_FEATURES, NUM_CLASSES)
-    loss_criterion = nn.NLLLoss()
-    if torch.cuda.is_available():
-        model = model.to('cuda')
-
-    print('# model parameters:', sum(param.numel() for param in model.parameters()))
-
-    engine = Engine()
-    meter_loss = tnt.meter.AverageValueMeter()
-    meter_accuracy = tnt.meter.ClassErrorMeter(accuracy=True)
-    train_loss_logger = VisdomPlotLogger('line', env=DATA_TYPE, opts={'title': 'Train Loss'})
-    train_accuracy_logger = VisdomPlotLogger('line', env=DATA_TYPE, opts={'title': 'Train Accuracy'})
-    test_loss_logger = VisdomPlotLogger('line', env=DATA_TYPE, opts={'title': 'Test Loss'})
-    test_accuracy_logger = VisdomPlotLogger('line', env=DATA_TYPE, opts={'title': 'Test Accuracy'})
-
-    engine.hooks['on_sample'] = on_sample
-    engine.hooks['on_forward'] = on_forward
-    engine.hooks['on_start_epoch'] = on_start_epoch
-    engine.hooks['on_end_epoch'] = on_end_epoch
-
-    # create a 10-fold cross validation
     train_iter = tqdm(range(1, 11), desc='Training Model......')
     for fold_number in train_iter:
-        # 90/10 train/test split
-        train_idxes = torch.as_tensor(np.loadtxt('data/%s/10fold_idx/train_idx-%d.txt' % (DATA_TYPE, fold_number),
+
+        # ─── Model Definition ─────────────────────────────────────────
+
+        model = Model(data_set.num_features, data_set.num_classes).to(device)
+        loss_criterion = nn.NLLLoss()  # Set loss criterion to negative log likelihood loss
+        optimizer = Adam(model.parameters()) # Create Adam optimizer for model parameters
+
+        # ─── Dataset Split ────────────────────────────────────────────
+
+        train_idxes = torch.as_tensor(np.loadtxt('data/%s/10fold_idx/train_idx-%d.txt' % (opt.data_type, fold_number),
                                                  dtype=np.int32), dtype=torch.long)
-        test_idxes = torch.as_tensor(np.loadtxt('data/%s/10fold_idx/test_idx-%d.txt' % (DATA_TYPE, fold_number),
+        test_idxes = torch.as_tensor(np.loadtxt('data/%s/10fold_idx/test_idx-%d.txt' % (opt.data_type, fold_number),
                                                 dtype=np.int32), dtype=torch.long)
         train_set, test_set = data_set[train_idxes], data_set[test_idxes]
-        train_loader = DataLoader(dataset=train_set, batch_size=BATCH_SIZE, shuffle=True)
-        test_loader = DataLoader(dataset=test_set, batch_size=BATCH_SIZE, shuffle=False)
+        train_loader = DataLoader(dataset=train_set, batch_size=opt.batch_size, shuffle=True)
+        test_loader = DataLoader(dataset=test_set, batch_size=opt.batch_size, shuffle=False)
 
+        # ─── Training Loop ────────────────────────────────────────────
+        
         fold_results = {'train_loss': [], 'test_loss': [], 'train_accuracy': [], 'test_accuracy': []}
+        for epoch in range(1, opt.num_epochs+1):
+            train_loss, train_acc = train(train_loader, model, loss_criterion, optimizer, device)
+            test_loss, test_acc = test(test_loader, model, loss_criterion, device)
+            
+            fold_results['train_loss'].append(train_loss)
+            fold_results['train_accuracy'].append(train_acc)
+            fold_results['test_loss'].append(test_loss)
+            fold_results['test_accuracy'].append(test_acc)
+            vis.line(torch.tensor([train_loss]), torch.tensor([epoch]), win='Train Loss', update='append', name=f'Fold_{fold_number}', opts={'title':'Train Loss', 'xlabel':'Epoch', 'ylabel':'NLL Loss'})
+            vis.line(torch.tensor([train_acc]), torch.tensor([epoch]), win='Train Accuracy', update='append', name=f'Fold_{fold_number}', opts={'title':'Train Accuracy', 'xlabel':'Epoch', 'ylabel':'%'})
+            vis.line(torch.tensor([test_loss]), torch.tensor([epoch]), win='Test Loss', update='append', name=f'Fold_{fold_number}', opts={'title':'Test Loss', 'xlabel':'Epoch', 'ylabel':'NLL Loss'})
+            vis.line(torch.tensor([test_acc]), torch.tensor([epoch]), win='Test Accuracy', update='append', name=f'Fold_{fold_number}', opts={'title':'Test Accuracy', 'xlabel':'Epoch', 'ylabel':'%'})
 
-        optimizer = Adam(model.parameters())
+        # ─── Save To Files ────────────────────────────────────────────
 
-        engine.train(processor, train_loader, maxepoch=NUM_EPOCHS, optimizer=optimizer)
-        # save statistics at every fold
-        fold_data_frame = pd.DataFrame(
-            data={'train_loss': fold_results['train_loss'], 'test_loss': fold_results['test_loss'],
-                  'train_accuracy': fold_results['train_accuracy'],
-                  'test_accuracy': fold_results['test_accuracy']},
-            index=range(1, NUM_EPOCHS + 1))
-        fold_data_frame.to_csv('statistics/%s_results_%d.csv' % (DATA_TYPE, fold_number), index_label='epoch')
+        torch.save(model.state_dict(), f'epochs/{opt.data_type}_{fold_number}.pth')
+        pd.DataFrame(data=fold_results, index=range(1, opt.num_epochs + 1)).to_csv(
+            f'statistics/{opt.data_type}_results_{fold_number}.csv', index_label='epoch')
+        
+        # ─── Save Overall Results ─────────────────────────────────────
 
         over_results['train_accuracy'].append(fold_results['train_accuracy'][-1])
         over_results['test_accuracy'].append(fold_results['test_accuracy'][-1])
 
-        train_iter.set_description('[Fold %d] Training Accuracy: %.2f%% Testing Accuracy: %.2f%%' % (
-            fold_number, fold_results['train_accuracy'][-1], fold_results['test_accuracy'][-1]))
+        # ─── Print Progress Bar ───────────────────────────────────────
 
-        model = Model(NUM_FEATURES, NUM_CLASSES)
-        if torch.cuda.is_available():
-            model = model.to('cuda')
+        train_iter.set_description(f'[{fold_number}] Train Acc: {fold_results["train_accuracy"][-1]:.2f}% Test Acc: {fold_results["test_accuracy"][-1]:.2f}%')
 
-    # save statistics at all folds
-    data_frame = pd.DataFrame(
-        data={'train_accuracy': over_results['train_accuracy'], 'test_accuracy': over_results['test_accuracy']},
-        index=range(1, 11))
-    data_frame.to_csv('statistics/%s_results_overall.csv' % DATA_TYPE, index_label='fold')
+    # ─── Save And Print Overall Result ────────────────────────────────────
 
+    pd.DataFrame(data=over_results,index=range(1, 11)).to_csv(
+        f'statistics/{opt.data_type}_results_overall.csv', index_label='fold')
     print('Overall Training Accuracy: %.2f%% (std: %.2f) Testing Accuracy: %.2f%% (std: %.2f)' %
           (np.array(over_results['train_accuracy']).mean(), np.array(over_results['train_accuracy']).std(),
            np.array(over_results['test_accuracy']).mean(), np.array(over_results['test_accuracy']).std()))
