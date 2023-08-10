@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from torch.nn import Conv1d, MaxPool1d, Linear, Dropout
-from torch_geometric.nn import GCNConv, global_sort_pool
+from torch_geometric.nn import GCNConv, SortAggregation
 from torch_geometric.utils import remove_self_loops
 
 
@@ -14,6 +14,7 @@ class Model(nn.Module):
         self.conv2 = GCNConv(32, 32)
         self.conv3 = GCNConv(32, 32)
         self.conv4 = GCNConv(32, 1)
+        self.sort_pool = SortAggregation(k=30)
         self.conv5 = Conv1d(1, 16, 97, 97)
         self.conv6 = Conv1d(16, 32, 5, 1)
         self.pool = MaxPool1d(2, 2)
@@ -31,7 +32,7 @@ class Model(nn.Module):
         x_3 = torch.tanh(self.conv3(x_2, edge_index))
         x_4 = torch.tanh(self.conv4(x_3, edge_index))
         x = torch.cat([x_1, x_2, x_3, x_4], dim=-1)
-        x = global_sort_pool(x, batch, k=30)
+        x = self.sort_pool(x, batch)
         x = x.view(x.size(0), 1, x.size(-1))
         x = self.relu(self.conv5(x))
         x = self.pool(x)
